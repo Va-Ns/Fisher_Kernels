@@ -1,0 +1,47 @@
+{
+  "$schema": "https://aka.ms/codetour-schema",
+  "title": "Fisher Kernels Code steps",
+  "steps": [
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Clear the workspace, clear the Command Window and Close any open figure",
+      "line": 1
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Initialize/Load the YOLOv4 Object Detector. After the first time running those lines of code, you can skip running it again. \r\n\r\nFuture work! \r\nTo use Semantic Segmentation\r\nhttps://github.com/matlab-deep-learning/pretrained-deeplabv3plus",
+      "line": 4
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Get the image's folder location and create an imageDatastore",
+      "line": 7
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "An important step to Datastores, of any kind, is to reset the datastore in every run of the code. That way the index of the reading function for the given datastore returns to its initial place\r\n",
+      "line": 13
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Preallocation for speedup",
+      "line": 15
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Adding a little flavour",
+      "line": 19
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "There has been a case where the Detector couldn't make a prediction. As a result, it returned an empty array, in which case we put a zero in the corresponding index of the scores and a categorical variable with the name \"Review\" in the corresponding index of the Labels variable",
+      "line": 32
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "In another instance, the Detector made ",
+      "line": 37
+    }
+  ],
+  "ref": "main"
+}
