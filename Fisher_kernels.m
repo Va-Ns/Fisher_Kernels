@@ -56,3 +56,6 @@ Labeling_time = toc
 
 % Find the Labels with Review 
 ind = find(Labels == "Review");
+
+% Find the images that correspond to those indexes
+Review_images = imds.Files(ind);
