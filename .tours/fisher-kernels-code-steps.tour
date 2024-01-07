@@ -39,8 +39,18 @@
     },
     {
       "file": "Fisher_kernels.m",
-      "description": "In another instance, the Detector made ",
+      "description": "In another instance, the Detector detecter more than one instances of an object (or objects) in the same image. To tackle this, we take the maximum of the scores over all the instances, find the corresponding index and use the index to create a unique label for the object with the highest score ",
       "line": 37
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Create a waitbar that shows the completion percentage of the Labeling procedure",
+      "line": 49
+    },
+    {
+      "file": "Fisher_kernels.m",
+      "description": "Create a logical vector that will be used as a way to remove the images that where not given a Label. Since the imageDatastore and the underlying images of the folder are closely connected, using the function \"delete\" would alter the database making it time consuming to reformat the data again. For that reason, we use the latter vector as an \"index\" to find the matched with the initially created datastore and place logical ones in the places where the indices to be removed should be. Then a new datastore is created with the excluded indices, giving the final form to the imageDatastore that it'll be used",
+      "line": 75
     }
   ],
   "ref": "main"

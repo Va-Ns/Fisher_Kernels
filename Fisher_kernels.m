@@ -71,6 +71,7 @@ ind = find(Labels == "Review");
 % datastore that doesn't include them and also remove the labels from the 
 % labels array
 
+
 delimg = false(size(imds.Files)); % Initialize delimg array
 
 for i = 1:length(ind)
