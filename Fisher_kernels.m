@@ -52,5 +52,7 @@ end
 
 % Close waitbar
 close(h)
-
 Labeling_time = toc
+
+% Find the Labels with Review 
+ind = find(Labels == "Review");
