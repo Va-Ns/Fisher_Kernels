@@ -15,7 +15,7 @@ loadingIcons = ['-', '\', '|', '/']; % Loading icon sequence
 
 tic
 % Create a waitbar
-h = waitbar(0, 'Processing...'); warning("off")
+h = waitbar(0, 'Processing...');
 
 while hasdata(imds)
     i=i+1;
@@ -44,10 +44,8 @@ while hasdata(imds)
     percentComplete = i / totalFiles;
     
     % Update waitbar
-    waitbar(percentComplete, h, sprintf('Processing %s \n %.2f%% complete', ...
+    waitbar(percentComplete, h, sprintf('Processing %s %.2f%% complete', ...
      loadingIcons(mod(i-1, numel(loadingIcons)) + 1), percentComplete*100));
-
-    
 end
 
 % Close waitbar
