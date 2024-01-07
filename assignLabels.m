@@ -1,0 +1,92 @@
+function new_imds = assignLabels(datastore,yolo,optional)
+
+
+arguments (Input)
+
+        datastore          {mustBeUnderlyingType(datastore, ...
+                                             ['matlab.io.datastore.' ...
+                                             'ImageDatastore'])}
+
+        yolo                {mustBeUnderlyingType(yolo, ...
+                             'yolov4ObjectDetector')}
+
+        
+        optional.Threshold  {mustBePositive,mustBeNonempty,...
+                             mustBeReal,mustBeFloat} = 0.90
+end
+
+
+%% Perform Object Detection
+
+i=0;
+reset(datastore)
+
+scores= zeros(length(datastore.Files),1);
+labelsYolo = zeros(length(datastore.Files),1);
+
+totalFiles = length(datastore.Files);
+loadingIcons = ['-', '\', '|', '/']; % Loading icon sequence
+
+% Create a waitbar
+h = waitbar(0, 'Processing...'); warning("off")
+
+tic
+
+while hasdata(datastore)
+    i=i+1;
+    img = read(datastore);
+    [~,scoresYolo,labelsYolo] = detect(yolo,img,"Threshold", ...
+        optional.Threshold,'ExecutionEnvironment','gpu');
+
+    if isempty(scoresYolo)
+
+        scores(i) = 0;
+        Labels(i) = categorical("Review");
+
+    elseif numel(labelsYolo) > 1
+
+        [scores(i),ind] = max(scoresYolo,[],"all");
+        Labels(i) = unique(labelsYolo(ind));
+
+    else
+
+        scores(i) = scoresYolo;
+        Labels(i) = labelsYolo;
+
+    end
+
+    % Calculate percentage of completion
+    percentComplete = i / totalFiles;
+
+    % Update waitbar
+    waitbar(percentComplete, h, sprintf('Processing %s \n %.2f%% complete', ...
+        loadingIcons(mod(i-1, numel(loadingIcons)) + 1), percentComplete*100));
+
+
+end
+
+% Close waitbar
+close(h)
+Labeling_time = toc
+
+%% Clean the data
+
+% Put the Labels to the corresponding place in the structure-type variable
+datastore.Labels = Labels;
+
+% Find the Labels with Review label
+ind = find(Labels == "Review");
+
+% Find the images that correspond to those indexes and create a new image
+% datastore that doesn't include them. Also remove the labels of those
+% indices from the labels array
+
+delimg = false(size(datastore.Files)); % Initialize delimg array
+
+for i = 1:length(ind)
+    delimg(matches(datastore.Files, datastore.Files{ind(i),1})) = true;
+end
+
+new_imds = subset(datastore, ~delimg);
+
+end
