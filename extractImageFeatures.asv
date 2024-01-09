@@ -1,25 +1,27 @@
-function features = extractFeatures(datastore,optional)
+function features = extractImageFeatures(datastore,optional)
 
 arguments (Input)
 
-        datastore          {mustBeUnderlyingType(datastore, ...
-                                             ['matlab.io.datastore.' ...
-                                             'ImageDatastore'])}
+    datastore          {mustBeUnderlyingType(datastore, ...
+        ['matlab.io.datastore.' ...
+        'ImageDatastore'])}
 
-        
-        
-        optional.gridRows  {mustBePositive,mustBeNonempty,...
-                             mustBeReal,mustBeInteger} = 2
 
-        optional.gridCols  {mustBePositive,mustBeNonempty,...
-                             mustBeReal,mustBeInteger} = 4
 
-        optional.Feature_reduction {mustBePositive,mustBeNonempty,...
-                                    mustBeReal,mustBeInteger} = 50
+    optional.gridRows  {mustBePositive,mustBeNonempty,...
+        mustBeReal,mustBeInteger} = 2
+
+    optional.gridCols  {mustBePositive,mustBeNonempty,...
+        mustBeReal,mustBeInteger} = 4
+
+    optional.Feature_reduction {mustBePositive,mustBeNonempty,...
+        mustBeReal,mustBeInteger} = 50
 end
 % First step is to resize all the images
 i=0;
 reset(datastore)
+rows = zeros(length(datastore.Files),1);
+cols = zeros(length(datastore.Files),1);
 while hasdata(datastore)
     i=i+1;
     im = read(datastore);
@@ -39,20 +41,54 @@ resized_imds = transform(datastore,@(x)imresize(x,imgSizeThresh,"bilinear"));
 reset(resized_imds)
 i=0;
 
-
 %% Extract SIFT features from all the images
 while hasdata(resized_imds)
     i=i+1;
     I = read(resized_imds);
-    points = detectSIFTFeatures(im2gray(I));
-    features(i).SIFTfeatures = extractFeatures(im2gray(I),points,"Method", ...
-        "SIFT");
+
+    % Divide the image into 2-by-4 grid
+    [rows, cols, ~] = size(I);
+    gridRows = optional.gridRows;
+    gridCols = optional.gridCols;
+
+    regionHeight = floor(rows/gridRows);
+    regionWidth = floor(cols/gridCols);
+
+    % Calculate statistics for each region
+    region_SIFT_features = [];
+    for r = 1:gridRows
+        for c = 1:gridCols
+            % Extract the region
+            region = I((r-1)*regionHeight+1:r*regionHeight, ...
+                (c-1)*regionWidth+1:c*regionWidth, :);
+
+            % Calculate statistics for the region
+            points = detectSIFTFeatures(im2gray(region));
+
+            if points.Count == 0
+
+                continue
+
+            else
+                
+                SIFT_features = extractFeatures(im2gray(region), ...
+                    points,"Method","SIFT");
+
+                region_SIFT_features = vertcat(region_SIFT_features,...
+                                               SIFT_features);
+                
+            end
+        end
+    end
+    features(i).SIFT_Features = region_SIFT_features;
 end
+
 
 %% Extract low-level RGB statistic features from all the images
 
 reset(resized_imds)
 i=0;
+features(1:length(resized_imds.Files)).RGBfeatures
 while hasdata(resized_imds)
     i=i+1;
     I = im2double(read(resized_imds));

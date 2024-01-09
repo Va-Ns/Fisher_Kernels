@@ -9,8 +9,8 @@ imds = imageDatastore(filelocation);
 
 %% Assign Labels
 new_imds = assignLabels(imds,yolo);
-
+clear yolo
 %% Feature Extraction
 
-features = extractFeatures(datastore,optional);
+features = extractImageFeatures(new_imds);
 
