@@ -211,8 +211,8 @@ for i = 1:length(features)
 end
 
 % Remove the elements with indices in removeIndices from the features array
-features(removeIndices) = []; features = rmfield(features, ...
-{'SIFT_scores_size','SIFT_scores','RGB_scores'});
+features(removeIndices) = []; 
+
 
 for i = 1:length(features)
 
@@ -224,6 +224,6 @@ for i = 1:length(features)
     features(i).reduced_RGB_features = features(i).RGB_scores(1: ...
                                             optional.Feature_reduction,:)';
 end
-
+features = rmfield(features,{'SIFT_scores_size','SIFT_scores','RGB_scores'});
 end
 
