@@ -73,10 +73,10 @@ while hasdata(datastore)
 end
 
 % Find the minimum dimensions of the images
-maxrows = max(rows);
-maxcols = max(cols);
+minrows = min(rows);
+mincols = min(cols);
 
-imgSizeThresh = [maxrows,maxcols];
+imgSizeThresh = [minrows,mincols];
 
 % Resize all the images based on the minimum dimensions using bilinear
 % interpolation
@@ -191,6 +191,7 @@ removeIndices = [];
 
 % Loop over each element of features
 for i = 1:length(features)
+
     % Check if SIFT_scores_size is out of range [50, 128]
     if features(i).SIFT_scores_size < 50 || features(i).SIFT_scores_size > 128
         removeIndices = [removeIndices, i];
@@ -210,16 +211,18 @@ for i = 1:length(features)
 end
 
 % Remove the elements with indices in removeIndices from the features array
-features(removeIndices) = []; features = rmfield(features, {'SIFT_scores_size', 'c'});
-
+features(removeIndices) = []; features = rmfield(features, ...
+                                                       'SIFT_scores_size');
 
 for i = 1:length(features)
 
     % Select the minimum principal components as
-    features(i).reduced_SIFT_features = features(i).SIFT_score(:,1:minimum_score);
+    features(i).reduced_SIFT_features = features(i).SIFT_score(:,1: ...
+                                               optional.Feature_reduction);
 
     % Select the first 50 principal components
-    features(i).reduced_RGB_features = RGB_score(1:minimum_score,:)';
+    features(i).reduced_RGB_features = features(i).RGB_scores(1: ...
+                                                         minimum_score,:)';
 end
 
 end

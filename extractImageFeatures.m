@@ -217,12 +217,12 @@ features(removeIndices) = []; features = rmfield(features, ...
 for i = 1:length(features)
 
     % Select the minimum principal components as
-    features(i).reduced_SIFT_features = features(i).SIFT_score(:,1: ...
-                                                            minimum_score);
+    features(i).reduced_SIFT_features = features(i).SIFT_scores(:,1: ...
+                                               optional.Feature_reduction);
 
     % Select the first 50 principal components
     features(i).reduced_RGB_features = features(i).RGB_scores(1: ...
-                                                         minimum_score,:)';
+                                            optional.Feature_reduction,:)';
 end
 
 end
