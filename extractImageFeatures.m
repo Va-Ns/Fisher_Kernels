@@ -1,5 +1,48 @@
 function features = extractImageFeatures(datastore,optional)
 
+%% Description 
+% -------------------------------------------------------------------------
+% A function that extracts image features from an image datastore. The 
+% function first resizes all images to the same size. Then, it extracts 
+% SIFT features and low-level RGB statistic features from each image. The 
+% images are divided into a grid, and features are extracted from each grid
+% cell. Finally, the function applies PCA to reduce the number of features.
+
+% Inputs: 
+% -------------------------------------------------------------------------
+% => datastore: The imageDatastore that contains the raw data. 
+% 
+% => optional: A structure that contains optional parameters for the 
+%              function. It includes the number of grid rows and columns 
+%              for dividing the image, and the number of features to retain
+%              after PCA.
+
+% Outputs: 
+% ------------------------------------------------------------------------- 
+% => features: A structure array that contains the extracted features for 
+%              each image. Each element of the array corresponds to one 
+%              image and contains the SIFT features, RGB statistic 
+%              features, and the reduced versions of these features after 
+%              PCA.
+% 
+% Details: 
+% -------------------------------------------------------------------------
+% The function works in several steps. First, it resizes all images to the 
+% same size. Then, it divides each image into a grid and extracts SIFT 
+% features from each grid cell. If no SIFT points are found in a cell, the
+% function continues with the next cell. The SIFT features from all cells 
+% are concatenated vertically.
+%
+% In the next step, the function calculates low-level RGB statistic 
+% features for each grid cell. These include the mean, standard deviation,
+% skewness, and kurtosis of the RGB values. The statistics for all cells 
+% are reshaped into a 1-by-96 vector.
+%
+% Finally, the function applies PCA to the SIFT features and RGB statistic 
+% features separately, and retains a specified number of principal 
+% components. The reduced features are added to the output structure.
+
+
 arguments (Input)
 
     datastore          {mustBeUnderlyingType(datastore, ...
@@ -132,7 +175,7 @@ end
 
 for i = 1: length(features)
 
-    [~,SIFT_score] = pca(features(i).SIFTfeatures);
+    [~,SIFT_score] = pca(features(i).SIFT_Features);
 
     % Select the first 50 principal components
     reduced_SIFT_data = SIFT_score(:, 1:optional.Feature_reduction);

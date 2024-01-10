@@ -11,6 +11,6 @@ imds = imageDatastore(filelocation);
 new_imds = assignLabels(imds,yolo);
 clear yolo
 %% Feature Extraction
-
+tic
 features = extractImageFeatures(new_imds);
-
+toc
