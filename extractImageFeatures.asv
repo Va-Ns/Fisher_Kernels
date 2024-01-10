@@ -73,10 +73,10 @@ while hasdata(datastore)
 end
 
 % Find the minimum dimensions of the images
-minrows = min(rows);
-mincols = min(cols);
+maxrows = max(rows);
+maxcols = max(cols);
 
-imgSizeThresh = [minrows,mincols];
+imgSizeThresh = [maxrows,maxcols];
 
 % Resize all the images based on the minimum dimensions using bilinear
 % interpolation
@@ -175,17 +175,52 @@ end
 close(h)
 %% Apply PCA to reduce to the optional number of features
 
-for i = 1: length(features)
+for i = 1:length(features)
+    [~,features(i).SIFT_scores] = pca(features(i).SIFT_Features);
+    [~,features(i).RGB_scores] = pca(features(i).RGBfeatures');
+    features(i).SIFT_scores_size = size(features(i).SIFT_scores,2);
+end
 
-    [~,SIFT_score] = pca(features(i).SIFT_Features);
+%% Check that all data have at least the optional reduced features. If not delete them
+
+% Get the field names
+fields = fieldnames(features);
+
+% Initialize an empty array to hold the indices of elements to remove
+removeIndices = [];
+
+% Loop over each element of features
+for i = 1:length(features)
+    % Check if SIFT_scores_size is out of range [50, 128]
+    if features(i).SIFT_scores_size < 50 || features(i).SIFT_scores_size > 128
+        removeIndices = [removeIndices, i];
+        continue; % Skip to the next iteration, no need to check other 
+                  % fields for this element
+    end
+    
+    % Loop over each field of the current element
+    for j = 1:length(fields)
+        % Check if there are any NaN values in the current field
+        if any(isnan(features(i).(fields{j})))
+            % If there are, add the index to the removeIndices array
+            removeIndices = [removeIndices, i];
+            break; % No need to check other fields for this element
+        end
+    end
+end
+
+% Remove the elements with indices in removeIndices from the features array
+features(removeIndices) = []; features = rmfield(features, {'SIFT_scores_size', 'c'});
+
+
+for i = 1:length(features)
+
+    % Select the minimum principal components as
+    features(i).reduced_SIFT_features = features(i).SIFT_score(:,1:minimum_score);
 
     % Select the first 50 principal components
-    features(i).reduced_SIFT_features = SIFT_score(:, ...
-                                            1:optional.Feature_reduction);
-
-    [~,RGB_score] = pca(features(i).RGBfeatures');
-
-    % Select the first 50 principal components
-    features(i).reduced_RGB_features = RGB_score(:, 1:optional.Feature_reduction);
+    features(i).reduced_RGB_features = RGB_score(1:minimum_score,:)';
+end
 
 end
+
