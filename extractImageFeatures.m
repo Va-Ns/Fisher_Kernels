@@ -73,10 +73,10 @@ while hasdata(datastore)
 end
 
 % Find the minimum dimensions of the images
-minrows = min(rows);
-mincols = min(cols);
+maxrows = max(rows);
+maxcols = max(cols);
 
-imgSizeThresh = [minrows,mincols];
+imgSizeThresh = [maxrows,maxcols];
 
 % Resize all the images based on the minimum dimensions using bilinear
 % interpolation
@@ -180,13 +180,13 @@ for i = 1: length(features)
     [~,SIFT_score] = pca(features(i).SIFT_Features);
 
     % Select the first 50 principal components
-    reduced_SIFT_data = SIFT_score(:, 1:optional.Feature_reduction);
-    features(i).reduced_SIFT_features = reduced_SIFT_data;
+    features(i).reduced_SIFT_features = SIFT_score(:, ...
+                                            1:optional.Feature_reduction);
 
-    [~,RGB_score] = pca(features(i).RGBfeatures);
+    [~,RGB_score] = pca(features(i).RGBfeatures');
 
     % Select the first 50 principal components
-    reduced_RGB_data = RGB_score(:, 1:optional.Feature_reduction);
-    features(i).reduced_RGB_features = reduced_RGB_data;
+    features(i).reduced_RGB_features = RGB_score(1: ...
+                                            optional.Feature_reduction,:)';
 
 end
