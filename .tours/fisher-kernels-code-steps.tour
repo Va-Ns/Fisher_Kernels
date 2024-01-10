@@ -54,7 +54,7 @@
     },
     {
       "file": "extractImageFeatures.m",
-      "description": "Get the size of all the images, find the maximum value and use it to resize all the images to that size. \r\n\r\nWhy not the minimum size?\r\nBecause the aspect ratio of the images is greatly distorted, raising conserns about the spatial information that the low-level extraction algorithms could extract. We sacrifice computational time to increase the later accuracy of the method",
+      "description": "Get the size of all the images, find the minimum value and use it to resize all the images to that size. ",
       "line": 65
     }
   ],
