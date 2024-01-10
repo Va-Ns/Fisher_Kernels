@@ -73,10 +73,10 @@ while hasdata(datastore)
 end
 
 % Find the minimum dimensions of the images
-maxrows = max(rows);
-maxcols = max(cols);
+minrows = min(rows);
+mincols = min(cols);
 
-imgSizeThresh = [maxrows,maxcols];
+imgSizeThresh = [minrows,mincols];
 
 % Resize all the images based on the minimum dimensions using bilinear
 % interpolation
@@ -86,52 +86,44 @@ reset(resized_imds)
 i=0;
 
 %% Extract SIFT features from all the images
+
+totalFiles = length(resized_imds.UnderlyingDatastores{:}.Files);
+loadingIcons = ['-', '\', '|', '/']; % Loading icon sequence
+
+h = waitbar(0, 'Extracting SIFT features...'); warning("off")
+
 while hasdata(resized_imds)
     i=i+1;
     I = read(resized_imds);
 
-    % Divide the image into 2-by-4 grid
-    [rows, cols, ~] = size(I);
-    gridRows = optional.gridRows;
-    gridCols = optional.gridCols;
+    % Find the SIFT points of the region
+    points = detectSIFTFeatures(im2gray(I));
 
-    regionHeight = floor(rows/gridRows);
-    regionWidth = floor(cols/gridCols);
+    SIFT_features = extractFeatures(im2gray(I), points, ...
+        "Method","SIFT");
 
-    % Calculate statistics for each region
-    region_SIFT_features = [];
-    for r = 1:gridRows
-        for c = 1:gridCols
-            % Extract the region
-            region = I((r-1)*regionHeight+1:r*regionHeight, ...
-                (c-1)*regionWidth+1:c*regionWidth, :);
 
-            % Find the SIFT points of the region
-            points = detectSIFTFeatures(im2gray(region));
+    features(i).SIFT_Features = SIFT_features;
 
-            if points.Count == 0
+    % Calculate percentage of completion
+    percentComplete = i / totalFiles;
 
-                continue
+    % Update waitbar
+    waitbar(percentComplete, h, sprintf(['Extracting SIFT features %s \n ' ...
+        '%.2f%% complete'],loadingIcons(mod(i-1, numel(loadingIcons)) + 1), ...
+                                                     percentComplete*100));
 
-            else
-                
-                SIFT_features = extractFeatures(im2gray(region), ...
-                    points,"Method","SIFT");
-
-                region_SIFT_features = vertcat(region_SIFT_features,...
-                                               SIFT_features);
-                
-            end
-        end
-    end
-    features(i).SIFT_Features = region_SIFT_features;
 end
 
+% Close waitbar
+close(h)
 
 %% Extract low-level RGB statistic features from all the images
 
 reset(resized_imds)
 i=0;
+
+h = waitbar(0, 'Extracting SIFT features...'); warning("off")
 
 while hasdata(resized_imds)
     i=i+1;
@@ -169,8 +161,18 @@ while hasdata(resized_imds)
     end
 
     features(i).RGBfeatures = reshape(regionStats_reshaped,[1,96]);
+
+    % Calculate percentage of completion
+    percentComplete = i / totalFiles;
+
+    % Update waitbar
+    waitbar(percentComplete, h, sprintf(['Extracting RGB features %s \n ' ...
+        '%.2f%% complete'],loadingIcons(mod(i-1, numel(loadingIcons)) + 1), ...
+                                                     percentComplete*100));
 end
 
+% Close waitbar
+close(h)
 %% Apply PCA to reduce to the optional number of features
 
 for i = 1: length(features)
