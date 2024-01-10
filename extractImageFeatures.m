@@ -212,7 +212,7 @@ end
 
 % Remove the elements with indices in removeIndices from the features array
 features(removeIndices) = []; features = rmfield(features, ...
-                                                       'SIFT_scores_size');
+{'SIFT_scores_size','SIFT_scores','RGB_scores'});
 
 for i = 1:length(features)
 
