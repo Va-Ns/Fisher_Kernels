@@ -29,6 +29,11 @@
     },
     {
       "file": "assignLabels.m",
+      "description": "Create a waitbar that shows the completion percentage of the Labeling procedure",
+      "line": 30
+    },
+    {
+      "file": "assignLabels.m",
       "description": "There has been a case where the Detector couldn't make a prediction. As a result, it returned an empty array, in which case we put a zero in the corresponding index of the scores and a categorical variable with the name \"Review\" in the corresponding index of the Labels variable",
       "line": 41
     },
@@ -39,13 +44,18 @@
     },
     {
       "file": "assignLabels.m",
-      "description": "Create a waitbar that shows the completion percentage of the Labeling procedure",
-      "line": 30
+      "description": "Create a logical vector that will be used as a way to remove the images that where not given a Label. Since the imageDatastore and the underlying images of the folder are closely connected, using the function \"delete\" would alter the database making it time consuming to reformat the data again. For that reason, we use the latter vector as an \"index\" to find the matched with the initially created datastore and place logical ones in the places where the indices to be removed should be. Then a new datastore is created with the excluded indices, giving the final form to the imageDatastore that it'll be used",
+      "line": 84
     },
     {
       "file": "assignLabels.m",
-      "description": "Create a logical vector that will be used as a way to remove the images that where not given a Label. Since the imageDatastore and the underlying images of the folder are closely connected, using the function \"delete\" would alter the database making it time consuming to reformat the data again. For that reason, we use the latter vector as an \"index\" to find the matched with the initially created datastore and place logical ones in the places where the indices to be removed should be. Then a new datastore is created with the excluded indices, giving the final form to the imageDatastore that it'll be used",
-      "line": 84
+      "description": "Create a new datastore that doesn't contain the data that couldn't be labeled",
+      "line": 90
+    },
+    {
+      "file": "extractImageFeatures.m",
+      "description": "Get the size of all the images, find the maximum value and use it to resize all the images to that size. \r\n\r\nWhy not the minimum size?\r\nBecause the aspect ratio of the images is greatly distorted, raising conserns about the spatial information that the low-level extraction algorithms could extract. We sacrifice computational time to increase the later accuracy of the method",
+      "line": 65
     }
   ],
   "ref": "main"
