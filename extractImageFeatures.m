@@ -105,6 +105,10 @@ while hasdata(resized_imds)
     regionHeight = floor(rows/gridRows);
     regionWidth = floor(cols/gridCols);
 
+    points = detectSIFTFeatures(im2gray(I));
+    Global_SIFT_features = extractFeatures(im2gray(I),points,"Method", ...
+                                                                   "SIFT");
+
     % Find the SIFT features for each region
     region_SIFT_features = [];
 
@@ -134,7 +138,8 @@ while hasdata(resized_imds)
         end
     end
 
-    features(i).Region_SIFT_Features = region_SIFT_features;
+    features(i).SIFT_Features = [Global_SIFT_features;
+                                 region_SIFT_features];
 
 end
 
@@ -172,9 +177,9 @@ while hasdata(resized_imds)
 
             % Calculate statistics for the region
             regionStats = [mean(region, [1,2]), ...
-                std(region, 1, [1,2]), ...
-                skewness(region, 1, [1,2]), ...
-                kurtosis(region, 1, [1,2])];
+                           std(region, 1, [1,2]), ...
+                           skewness(region, 1, [1,2]), ...
+                           kurtosis(region, 1, [1,2])];
 
             regionStats= reshape(regionStats,[1 12]);
 
@@ -200,7 +205,7 @@ close(h)
 %% Apply PCA to reduce to the optional number of features
 
 for i = 1:length(features)
-    [~,features(i).SIFT_scores] = pca(features(i).Region_SIFT_Features);
+    [~,features(i).SIFT_scores] = pca(features(i).SIFT_Features);
     [~,features(i).RGB_scores] = pca(features(i).RGBfeatures');
     features(i).SIFT_scores_size = size(features(i).SIFT_scores,2);
 end

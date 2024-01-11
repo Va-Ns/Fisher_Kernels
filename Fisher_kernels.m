@@ -14,4 +14,3 @@ clear yolo
 tic
 features = extractImageFeatures(new_imds);
 toc
-save("Fisher_kernels.m","features")
