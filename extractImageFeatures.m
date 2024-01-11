@@ -46,19 +46,19 @@ function features = extractImageFeatures(datastore,optional)
 arguments (Input)
 
     datastore          {mustBeUnderlyingType(datastore, ...
-        ['matlab.io.datastore.' ...
-        'ImageDatastore'])}
+                                             ['matlab.io.datastore.' ...
+                                             'ImageDatastore'])}
 
 
 
     optional.gridRows  {mustBePositive,mustBeNonempty,...
-        mustBeReal,mustBeInteger} = 2
+                        mustBeReal,mustBeInteger} = 2
 
     optional.gridCols  {mustBePositive,mustBeNonempty,...
-        mustBeReal,mustBeInteger} = 4
+                        mustBeReal,mustBeInteger} = 4
 
     optional.Feature_reduction {mustBePositive,mustBeNonempty,...
-        mustBeReal,mustBeInteger} = 50
+                                mustBeReal,mustBeInteger} = 50
 end
 
 % First step is to resize all the images
@@ -131,7 +131,7 @@ while hasdata(resized_imds)
             percentComplete = i / totalFiles;
 
             % Update waitbar
-            waitbar(percentComplete, h, sprintf(['Extracting regional SIFT' ...
+            waitbar(percentComplete, h, sprintf(['Extracting regional SIFT ' ...
                     'features %s \n %.2f%% complete'],loadingIcons(mod(i-1, ...
                     numel(loadingIcons)) + 1),percentComplete*100));
 

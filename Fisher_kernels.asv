@@ -15,7 +15,7 @@ tic
 features = extractImageFeatures(new_imds);
 toc
 
-%% Create a struct that contains the vertically concatenated features 
+%% Create a struct that contains the 
 
 % Concatenate each feature category into a single matrix and put it into a
 % structure
@@ -23,7 +23,5 @@ FeatureMatrix.SIFT_Features_Matrix = vertcat(features(:).SIFT_Features);
 FeatureMatrix.RGB_Features_Matrix = vertcat(features(:).RGBfeatures);
 FeatureMatrix.Reduced_SIFT_Features_Matrix = vertcat(features(:).reduced_SIFT_features);
 FeatureMatrix.Reduced_RGB_Features_Matrix = vertcat(features(:).reduced_RGB_features);
-
-%% Gaussian Mixture Model
 
 
