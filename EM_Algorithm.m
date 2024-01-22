@@ -1,4 +1,4 @@
-function [negLogLikelihoods, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data, numClusters, numDims, maxIterations, numPoints, numReplicates)
+function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data, numClusters, numDims, maxIterations, numPoints, numReplicates)
 
     % Define the tolerance for convergence
     tol = 1e-6;
@@ -6,14 +6,14 @@ function [negLogLikelihoods, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data
     % Initialize the log-likelihood
     logLikelihoodOld = -Inf;
 
-    % Initialize the vector to store the negative log-likelihood at each iteration
-    negLogLikelihoods = [];
+    % Initialize the best negative log-likelihood to Inf
+    bestNegLogLikelihood = Inf;
 
     % Vectorized Gaussian function
     Gaussian = @(X, mu, Sigma) (1 / sqrt((2*pi*(Sigma^2)))) * ...
                                 exp(-((X-mu).^2/(2*(Sigma)^2)));
 
-    bestLogLikelihood = -Inf;
+    bestLogLikelihood = Inf;
     for replicate = 1:numReplicates
         % Define the initial parameters
         weights = ones(1, numClusters) / numClusters; % Equal weights
@@ -21,6 +21,7 @@ function [negLogLikelihoods, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data
         Sigmas = gpuArray(ones(numClusters, numDims)); % Unit variances
 
         for iteration = 1:maxIterations
+            
             % E-step: Compute the responsibilities using the current parameters
             r_nk = gpuArray.zeros(numPoints, numClusters);
             for dim = 1:numDims
@@ -46,11 +47,8 @@ function [negLogLikelihoods, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data
                 gaussians = arrayfun(Gaussian, bsxfun(@minus, data(:, dim), mus(:, dim)'), ...
                                                bsxfun(@minus, mus(:, dim)', data(:, dim)), ...
                                                bsxfun(@times, sqrt(max(Sigmas(:, dim)', 1e-6)), ones(numPoints, 1)));
-                logLikelihood = logLikelihood + weights * sum(log(max(gaussians, 1e-6)), 1)';
+                logLikelihood = logLikelihood + sum(log(max(weights .* gaussians, 1e-6)), 'all');
             end
-
-            % Store the negative log-likelihood
-            negLogLikelihoods = [negLogLikelihoods, -gather(logLikelihood)];
 
             % Check for convergence
             if abs(logLikelihood - logLikelihoodOld) < tol
@@ -61,11 +59,16 @@ function [negLogLikelihoods, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data
         end
 
         % Check if this replicate has a better log-likelihood
-        if logLikelihood > bestLogLikelihood
-            bestLogLikelihood = logLikelihood;
+        if -logLikelihood < bestLogLikelihood
+            bestLogLikelihood = -logLikelihood;
             bestWeights = weights;
             bestMus = mus;
             bestSigmas = Sigmas;
+        end
+
+        % Update the best negative log-likelihood if necessary
+        if -logLikelihood < bestNegLogLikelihood
+            bestNegLogLikelihood = -logLikelihood;
         end
     end
 
@@ -76,6 +79,6 @@ function [negLogLikelihoods, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data
 
     % Compute the AIC and BIC
     p = numClusters * (1 + numDims + numDims); % Number of parameters
-    AIC = 2 * bestLogLikelihood + 2 * p;
-    BIC = 2 * bestLogLikelihood + p * log(numPoints);
+    AIC = 2 * p + 2 * bestLogLikelihood;
+    BIC = log(numPoints) * p + 2 * bestLogLikelihood;
 end
