@@ -1,7 +1,7 @@
 function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(data, numClusters, numDims, maxIterations, numPoints, numReplicates)
 
     % Define the tolerance for convergence
-    tol = 1e-6;
+    tol = 1e-8;
 
     % Initialize the log-likelihood
     logLikelihoodOld = -Inf;
@@ -14,6 +14,9 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
                                 exp(-((X-mu).^2/(2*(Sigma)^2)));
 
     bestLogLikelihood = Inf;
+    bestLogLikelihoodOld = Inf;  % NEW: Initialize old best log-likelihood
+    bestReplicate = 0;  % NEW: Initialize best replicate
+
     for replicate = 1:numReplicates
         % Define the initial parameters
         weights = ones(1, numClusters) / numClusters; % Equal weights
@@ -22,7 +25,7 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
 
         for iteration = 1:maxIterations
             
-            % E-step: Compute the responsibilities using the current parameters
+            %% E-step: Compute the responsibilities using the current parameters
             r_nk = gpuArray.zeros(numPoints, numClusters);
             for dim = 1:numDims
                 gaussians = arrayfun(Gaussian, bsxfun(@minus, data(:, dim), mus(:, dim)'), ...
@@ -33,8 +36,10 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
             r_nk = exp(r_nk - max(r_nk, [], 2));
             r_nk = r_nk ./ sum(r_nk, 2);
 
-            % M-step: Update the parameters using the current responsibilities
+            %% M-step: Update the parameters using the current responsibilities
+
             N_k = sum(r_nk, 1);
+
             weights = max(N_k / numPoints, 1e-6);
             for i = 1:numClusters
                 mus(i, :) = r_nk(:, i)' * data / max(N_k(i), 1e-6);
@@ -64,7 +69,14 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
             bestWeights = weights;
             bestMus = mus;
             bestSigmas = Sigmas;
+            bestReplicate = replicate;  % NEW: Update best replicate
         end
+        
+        % NEW: Check if the best log-likelihood has improved significantly
+        if abs(bestLogLikelihood - bestLogLikelihoodOld) < tol
+            break;
+        end
+        bestLogLikelihoodOld = bestLogLikelihood;  % NEW: Update old best log-likelihood
 
         % Update the best negative log-likelihood if necessary
         if -logLikelihood < bestNegLogLikelihood
@@ -81,4 +93,8 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
     p = numClusters * (1 + numDims + numDims); % Number of parameters
     AIC = 2 * p + 2 * bestLogLikelihood;
     BIC = log(numPoints) * p + 2 * bestLogLikelihood;
+
+    % NEW: Display the replicate at which the best negative log-likelihood was found and its value
+    fprintf(['Best negative log-likelihood found to be: %e at Replicate: ' ...
+        '%d\n'], bestLogLikelihood, bestReplicate);
 end

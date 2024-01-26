@@ -14,6 +14,9 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
                                 exp(-((X-mu).^2/(2*(Sigma)^2)));
 
     bestLogLikelihood = Inf;
+    bestLogLikelihoodOld = Inf;  % NEW: Initialize old best log-likelihood
+    bestReplicate = 0;  % NEW: Initialize best replicate
+
     for replicate = 1:numReplicates
         % Define the initial parameters
         weights = ones(1, numClusters) / numClusters; % Equal weights
@@ -64,7 +67,14 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
             bestWeights = weights;
             bestMus = mus;
             bestSigmas = Sigmas;
+            bestReplicate = replicate;  % NEW: Update best replicate
         end
+        
+        % NEW: Check if the best log-likelihood has improved significantly
+        if abs(bestLogLikelihood - bestLogLikelihoodOld) < tol
+            break;
+        end
+        bestLogLikelihoodOld = bestLogLikelihood;  % NEW: Update old best log-likelihood
 
         % Update the best negative log-likelihood if necessary
         if -logLikelihood < bestNegLogLikelihood
@@ -81,4 +91,8 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm(d
     p = numClusters * (1 + numDims + numDims); % Number of parameters
     AIC = 2 * p + 2 * bestLogLikelihood;
     BIC = log(numPoints) * p + 2 * bestLogLikelihood;
+
+    % NEW: Display the replicate at which the best negative log-likelihood was found and its value
+    fprintf(['Best negative log-likelihood found to be: %e at Replicate: ' ...
+        '%d\n'], bestLogLikelihood, bestReplicate);
 end
