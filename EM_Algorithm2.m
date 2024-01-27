@@ -14,7 +14,7 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
     bestReplicate = 0;
 
     % Preallocate log_lh
-    log_lh = gpuArray.zeros(numPoints, numClusters);
+    Log_Likelihood = gpuArray.zeros(numPoints, numClusters);
 
     % Compute constant term
     constTerm = numDims*log(2*pi)/2;
@@ -29,32 +29,126 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
         for iteration = 1:maxIterations
             
             %% E-step: Compute the responsibilities using the current parameters
-            log_lh(:) = 0; % Reset log_lh
+            Log_Likelihood(:) = 0; % Reset log_lh
             for j = 1:numClusters
+
+                
                 log_prior = log(weights(j));
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % This line calculates the logarithm of the prior probability 
+                % of the j-th cluster. The prior probability is represented 
+                % by the weight of the cluster,which indicates how likely 
+                % it is that a randomly chosen data point belongs to this 
+                % cluster.
+
+                
                 logDetSigma = sum(log(Sigmas(j, :)));
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % This line calculates the logarithm of the determinant of 
+                % the covariance matrix Sigmas for the j-th cluster. Since 
+                % the covariance matrix is diagonal in this case, the 
+                % determinant is simply the product of the diagonal elements,
+                % and the logarithm of the determinant is the sum of the 
+                % logarithms of the diagonal elements.
+         
                 L = sqrt(Sigmas(j, :));
-                log_lh(:,j) = sum(bsxfun(@rdivide, bsxfun(@minus, data, mus(j,:)), L).^2, 2);
-                log_lh(:,j) = -0.5*(log_lh(:,j) + logDetSigma);
-                log_lh(:,j) = log_lh(:,j) + log_prior - constTerm;
+                %^^^^^^^^^^^^^^^^^^^^^^
+                % This line calculates the square root of each element in 
+                % the j-th row of Sigmas, which represents the standard 
+                % deviations of the j-th cluster.
+
+                Log_Likelihood(:,j) = sum(bsxfun(@rdivide, bsxfun(@minus, ...
+                                                data, mus(j,:)), L).^2, 2);
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % This line calculates the squared Mahalanobis distance 
+                % from each data point to the mean of the j-th cluster, 
+                % divided by the variance. This is done using element-wise 
+                % operations and broadcasting, which makes the code more 
+                % efficient and easier to read.
+
+                Log_Likelihood(:,j) = -0.5*(Log_Likelihood(:,j) + logDetSigma);
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % The log-likelihood is being calculated.
+
+                Log_Likelihood(:,j) = Log_Likelihood(:,j) + log_prior - constTerm;
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % This line adds the log-prior and subtracts a constant 
+                % term from the log-likelihood. The constant term does not 
+                % depend on the cluster, so it does not affect which 
+                % cluster has the maximum log-likelihood, but it ensures 
+                % that the log-likelihoods are properly normalized.
             end
 
-            maxll = max(log_lh,[],2);
-            post = exp(log_lh-maxll);
-            density = sum(post,2);
-            logpdf = log(density) + maxll;
-            logLikelihood = sum(logpdf); 
-            post = post./density;%normalize posteriors
+            MaxLogLikelihood = max(Log_Likelihood,[],2);
+            responsibilities = exp(Log_Likelihood-MaxLogLikelihood); % To avoid numerical 
+                                                                     % underflow,normalize 
+                                                                     % the responsibilities 
+                                                                     % and exponentiate. 
+            
+            %  This line computes the sum of the responsibilities for each 
+            % data point across all clusters. The result is a column vector
+            % where each element is the sum of the responsibilities for a 
+            % data point.
+            Density = sum(responsibilities,2);
+            Logpdf = log(Density) + MaxLogLikelihood; 
+            % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            % The addition of the maximum log-likelihood to the log of the 
+            % density is a common technique used to improve numerical 
+            % stability when working with very small (or very large) numbers,
+            % which is often the case when dealing with probabilities and 
+            % likelihoods.
+            logLikelihood = sum(Logpdf);
+            % ^^^^^^^^^^^^^^^^^^^^^^^^^^
+            % Τhis line computes the total log-likelihood, which is the sum
+            % of the log-pdfs for all data points.
+            responsibilities = responsibilities./Density; % Νormalize Responsibilities
 
             %% M-step: Update the parameters using the current responsibilities
             
             for j = 1:numClusters
-                post_j = post(:,j)';
-                nz_idx = post_j>0;
-                mus(j,:) = post_j * data / sum(post_j);
-                Xcentered = data(nz_idx,:) - mus(j,:);
-                Sigmas(j,:) = post_j(nz_idx) * (Xcentered.^2) / sum(post_j(nz_idx)) + 1e-6; % Corrected line
-                weights(j) = sum(post_j) / numPoints;
+                % For each cluster
+
+                Responsibilities_j = responsibilities(:,j)';
+                % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % Extract the responsibilities of all data points for the 
+                % current cluster j. The responsibilities represent the 
+                % probability that each data point belongs to the current 
+                % cluster, given the current parameter estimates.
+
+                Nonzero_idx = Responsibilities_j > 0;
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % Create a logical index vector that identifies the data 
+                % points for which the responsibility towards the current 
+                % cluster j is greater than zero.
+                mus(j,:) = Responsibilities_j * data / sum(Responsibilities_j);
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % Update the mean vector mus for the current cluster j. 
+                % The new mean is the weighted average of all data points, 
+                % where the weights are the responsibilities. This is the 
+                % expected value of the data given the current responsibilities
+                Centered_Data = data(Nonzero_idx,:) - mus(j,:);
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % Computes the centered data by subtracting the new mean 
+                % mus(j,:) from the data points that have non-zero 
+                % responsibility towards the current cluster j.
+                Sigmas(j,:) = Responsibilities_j(Nonzero_idx) *... 
+                              (Centered_Data.^2) / sum(Responsibilities_j(Nonzero_idx)) +...
+                               1e-6;
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
+                % This line updates the variance vector Sigmas for the 
+                % current cluster j. The new variance is the weighted 
+                % average of the squared centered data, where the weights 
+                % are the responsibilities. The 1e-6 term is added for 
+                % numerical stability, to prevent division by zero or 
+                % taking the square root of a negative number in subsequent
+                % computations.
+                weights(j) = sum(Responsibilities_j) / numPoints;
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % This line updates the weight for the current cluster j. 
+                % The new weight is the average responsibility of the data
+                % points towards the current cluster. This represents the 
+                % estimated probability that a randomly chosen data point 
+                % belongs to the current cluster.
             end
 
             % Check for convergence
@@ -89,9 +183,11 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
     Sigmas = bestSigmas;
 
     % Compute the AIC and BIC
-    p = numClusters * (1 + numDims + numDims); % Number of parameters
-    AIC = 2 * p + 2 * bestLogLikelihood;
-    BIC = log(numPoints) * p + 2 * bestLogLikelihood;
+    nParam = size(data, 2) + numClusters - 1 + numClusters * size(data, 2); % Number of parameters
+    
+    % Compute AIC and BIC
+    AIC = 2*nParam + 2 * bestLogLikelihood;
+    BIC = nParam*log(numPoints) + 2 * bestLogLikelihood;
 
     % Display the replicate at which the best negative log-likelihood was found and its value
     fprintf(['Best negative log-likelihood found to be: %e at Replicate: ' ...
