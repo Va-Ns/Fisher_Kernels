@@ -173,8 +173,8 @@ function GMM = EM_Algorithm(data, numClusters, Options)
         end
 
         % Check if this replicate has a better log-likelihood
-        if -logLikelihood < bestLogLikelihood
-            bestLogLikelihood = -logLikelihood;
+        if logLikelihood < bestLogLikelihood
+            bestLogLikelihood = logLikelihood;
             bestWeights = weights;
             bestMus = mus;
             bestSigmas = Sigmas;
@@ -201,8 +201,8 @@ function GMM = EM_Algorithm(data, numClusters, Options)
     nParam = size(data, 2) + numClusters - 1 + numClusters * size(data, 2); 
     
     % Compute AIC and BIC
-    AIC = 2*nParam + 2 * bestLogLikelihood;
-    BIC = nParam*log(numPoints) + 2 * bestLogLikelihood;
+    AIC = 2*nParam - 2 * bestLogLikelihood;
+    BIC = nParam*log(numPoints) - 2 * bestLogLikelihood;
 
     % Create a structure that contains the parameters, log-likelihood, AIC, and BIC
     GMM = struct('weights', weights, 'mus', mus, 'Sigmas', Sigmas, ...
