@@ -39,7 +39,7 @@ SCtext = {'true','false'};
 nSC = numel(SharedCovariance);
 
 RegularizationValue = 0.01;
-options = statset('MaxIter',1000,'Display','iter');
+options = statset('MaxIter',1000);
 X = FeatureMatrix.Reduced_SIFT_Features_Matrix;
 
 % Fit all models in parallel
