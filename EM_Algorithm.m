@@ -5,7 +5,7 @@ function GMM = EM_Algorithm(data, numClusters, Options)
         data (:,:) double {mustBeReal, mustBeFinite}
         numClusters (1,1) double {mustBeInteger, mustBePositive,...
                                   mustBeNonempty,mustBeNonzero,mustBeNonmissing}
-        Options.MaxIterations (1,1) double {mustBeInteger, mustBePositive} = 100;
+        Options.MaxIterations (1,1) double {mustBeInteger, mustBePositive} = 1000;
         Options.NumReplicates (1,1) double {mustBeInteger, mustBePositive} = 10;
         Options.Tolerance (1,1) double {mustBeReal, mustBeFinite} = 1e-8;
 
