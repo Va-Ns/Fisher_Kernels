@@ -28,11 +28,9 @@ preprocessing_time = toc
 
 %% Gaussian Mixture Model
 
-options = statset('MaxIter',10000,'Display','iter');
-SIFTGMMmodel = fitgmdist(FeatureMatrix.Reduced_SIFT_Features_Matrix,128, ...
-                         "CovarianceType","diagonal","RegularizationValue", ...
-                         0.001,"Options",options);
+GMM = EM_Algorithm(FeatureMatrix.Reduced_SIFT_Features_Matrix,10,"maxIterations",10,"numReplicates",10);
 
-[idx,nlogL,P,logpdf,d2] = cluster(SIFTGMMmodel, ...
-                                  FeatureMatrix.Reduced_RGB_Features_Matrix);
+options = statset('MaxIter',10,'Display','iter');
+SIFTGMMmodel = fitgmdist(FeatureMatrix.Reduced_SIFT_Features_Matrix,10, ...
+                         "CovarianceType","diagonal","Options",options,"Replicates",10);
 

@@ -3,18 +3,19 @@ function GMM = EM_Algorithm(data, numClusters, Options)
     arguments 
 
         data (:,:) double {mustBeReal, mustBeFinite}
-        numClusters (1,1) double {mustBeInteger, mustBePositive}
-        Options.maxIterations (1,1) double {mustBeInteger, mustBePositive} = 100;
-        Options.numReplicates (1,1) double {mustBeInteger, mustBePositive} = 10;
-        Options.tolerance (1,1) double {mustBeReal, mustBeFinite} = 1e-8;
+        numClusters (1,1) double {mustBeInteger, mustBePositive,...
+                                  mustBeNonempty,mustBeNonzero,mustBeNonmissing}
+        Options.MaxIterations (1,1) double {mustBeInteger, mustBePositive} = 100;
+        Options.NumReplicates (1,1) double {mustBeInteger, mustBePositive} = 10;
+        Options.Tolerance (1,1) double {mustBeReal, mustBeFinite} = 1e-8;
 
     end
 
 
-   [numPoints,numDims] = size(FeatureMatrix.Reduced_SIFT_Features_Matrix);
+   [numPoints,numDims] = size(data);
 
     % Define the tolerance for convergence
-    tol = Options.tolerance;
+    tol = Options.Tolerance;
 
     % Initialize the log-likelihood
     logLikelihoodOld = -Inf;
@@ -29,14 +30,14 @@ function GMM = EM_Algorithm(data, numClusters, Options)
     % Compute constant term
     constTerm = numDims*log(2*pi)/2;
 
-    for replicate = 1:numReplicates
+    for replicate = 1:Options.NumReplicates
         
         % Define the initial parameters
         weights = ones(1, numClusters) / numClusters; % Equal weights
         mus = gpuArray(randn(numClusters, numDims)); % Random means
         Sigmas = gpuArray(ones(numClusters, numDims)); % Unit variances
 
-        for iteration = 1:maxIterations
+        for iteration = 1:Options.MaxIterations
             
             %% E-step: Compute the responsibilities using the current parameters
             Log_Likelihood(:) = 0; % Reset log_lh
@@ -95,11 +96,13 @@ function GMM = EM_Algorithm(data, numClusters, Options)
                                                                      % the responsibilities 
                                                                      % and exponentiate. 
             
+            
+            Density = sum(responsibilities,2);
+            % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             %  This line computes the sum of the responsibilities for each 
             % data point across all clusters. The result is a column vector
             % where each element is the sum of the responsibilities for a 
             % data point.
-            Density = sum(responsibilities,2);
             Logpdf = log(Density) + MaxLogLikelihood; 
             % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             % The addition of the maximum log-likelihood to the log of the 
@@ -192,8 +195,10 @@ function GMM = EM_Algorithm(data, numClusters, Options)
     mus = bestMus;
     Sigmas = bestSigmas;
 
-    % Compute the AIC and BIC
-    nParam = size(data, 2) + numClusters - 1 + numClusters * size(data, 2); % Number of parameters
+    %% Compute the AIC and BIC
+    
+    % Number of parameters
+    nParam = size(data, 2) + numClusters - 1 + numClusters * size(data, 2); 
     
     % Compute AIC and BIC
     AIC = 2*nParam + 2 * bestLogLikelihood;
