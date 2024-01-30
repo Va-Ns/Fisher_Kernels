@@ -1,5 +1,9 @@
 clear;clc;close all
-
+%%
+delete(gcp('nocreate'))
+maxWorkers = maxNumCompThreads;
+disp("Maximum number of workers: " + maxWorkers);
+pool=parpool(maxWorkers/2+2);
 %% Load the YOLOv4 Object Detector
 yolo = yolov4ObjectDetector("csp-darknet53-coco");
 
@@ -28,9 +32,28 @@ preprocessing_time = toc
 
 %% Gaussian Mixture Model
 
-GMM = EM_Algorithm(FeatureMatrix.Reduced_SIFT_Features_Matrix,10,"maxIterations",10,"numReplicates",10);
+%step = 10;
+numModels = 200;
+logLikelihoods = zeros(1, numModels);
+AICs = zeros(1, numModels);
+BICs = zeros(1, numModels);
+GMMs = cell(1, numModels);
 
-options = statset('MaxIter',10,'Display','iter');
-SIFTGMMmodel = fitgmdist(FeatureMatrix.Reduced_SIFT_Features_Matrix,10, ...
-                         "CovarianceType","diagonal","Options",options,"Replicates",10);
 
+for i = 1 : numModels
+
+    fprintf("Number of cluster:%d ",i)
+    GMMs{i} = GMM_NV(FeatureMatrix.Reduced_SIFT_Features_Matrix, i, ...
+                     "NumReplicates",1); 
+    logLikelihoods(i) = GMMs{i}.logLikelihood;
+    AICs(i) = GMMs{i}.AIC;
+    BICs(i) = GMMs{i}.BIC;
+    fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods(i))   
+    
+end
+
+plot(-logLikelihoods,'.','LineWidth', 2, 'MarkerSize',10, ...
+                                                    'MarkerFaceColor', 'b')
+title("Negative Log-Likelihood over Number of Clusters")
+xlabel("Number of Clusters")
+ylabel("Negative Log-Likelihood")

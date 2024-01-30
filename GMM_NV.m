@@ -1,13 +1,24 @@
-function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(data, numClusters, numDims, maxIterations, numPoints, numReplicates)
+function GMM = GMM_NV(data, numClusters, Options)
+    
+    arguments 
+
+        data (:,:) double {mustBeReal, mustBeFinite}
+        numClusters (1,1) double {mustBeInteger, mustBePositive,...
+                                  mustBeNonempty,mustBeNonzero,mustBeNonmissing}
+        Options.MaxIterations (1,1) double {mustBeInteger, mustBePositive} = 100;
+        Options.NumReplicates (1,1) double {mustBeInteger, mustBePositive} = 5;
+        Options.Tolerance (1,1) double {mustBeReal, mustBeFinite} = 1e-8;
+
+    end
+
+
+   [numPoints,numDims] = size(data);
 
     % Define the tolerance for convergence
-    tol = 1e-8;
+    tol = Options.Tolerance;
 
     % Initialize the log-likelihood
     logLikelihoodOld = -Inf;
-
-    % Initialize the best negative log-likelihood to Inf
-    bestNegLogLikelihood = Inf;
 
     bestLogLikelihood = Inf;
     bestLogLikelihoodOld = Inf;
@@ -19,17 +30,20 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
     % Compute constant term
     constTerm = numDims*log(2*pi)/2;
 
-    for replicate = 1:numReplicates
+    for replicate = 1:Options.NumReplicates
         
         % Define the initial parameters
-        weights = ones(1, numClusters) / numClusters; % Equal weights
-        mus = gpuArray(randn(numClusters, numDims)); % Random means
+        weights = gpuArray(ones(1, numClusters) / numClusters); % Equal weights
+        warning("off")
+        [~, mus] = kmeans(gpuArray(data), numClusters, 'MaxIter', ...
+                                                    Options.MaxIterations); % Initialize means using kmeans
         Sigmas = gpuArray(ones(numClusters, numDims)); % Unit variances
 
-        for iteration = 1:maxIterations
+        for iteration = 1:Options.MaxIterations
             
             %% E-step: Compute the responsibilities using the current parameters
             Log_Likelihood(:) = 0; % Reset log_lh
+
             for j = 1:numClusters
 
                 
@@ -67,11 +81,11 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
                 % efficient and easier to read.
 
                 Log_Likelihood(:,j) = -0.5*(Log_Likelihood(:,j) + logDetSigma);
-                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % The log-likelihood is being calculated.
 
                 Log_Likelihood(:,j) = Log_Likelihood(:,j) + log_prior - constTerm;
-                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % This line adds the log-prior and subtracts a constant 
                 % term from the log-likelihood. The constant term does not 
                 % depend on the cluster, so it does not affect which 
@@ -80,16 +94,19 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
             end
 
             MaxLogLikelihood = max(Log_Likelihood,[],2);
-            responsibilities = exp(Log_Likelihood-MaxLogLikelihood); % To avoid numerical 
+            responsibilities = exp(Log_Likelihood-MaxLogLikelihood); 
+                                                                     % To avoid numerical 
                                                                      % underflow,normalize 
                                                                      % the responsibilities 
                                                                      % and exponentiate. 
             
+            
+            Density = sum(responsibilities,2);
+            % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             %  This line computes the sum of the responsibilities for each 
             % data point across all clusters. The result is a column vector
             % where each element is the sum of the responsibilities for a 
             % data point.
-            Density = sum(responsibilities,2);
             Logpdf = log(Density) + MaxLogLikelihood; 
             % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             % The addition of the maximum log-likelihood to the log of the 
@@ -106,6 +123,7 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
             %% M-step: Update the parameters using the current responsibilities
             
             for j = 1:numClusters
+
                 % For each cluster
 
                 Responsibilities_j = responsibilities(:,j)';
@@ -143,10 +161,17 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
                 % taking the square root of a negative number in subsequent
                 % computations.
                 weights(j) = sum(Responsibilities_j) / numPoints;
+                %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+                % This line updates the weight for the current cluster j. 
+                % The new weight is the average responsibility of the data
+                % points towards the current cluster. This represents the 
+                % estimated probability that a randomly chosen data point 
+                % belongs to the current cluster.
             end
 
             % Check for convergence
-            if abs(logLikelihood - logLikelihoodOld) < tol
+            if abs(logLikelihood - logLikelihoodOld) < tol || iteration == Options.MaxIterations
+                % disp("Max iterations reached")
                 break;
             end
 
@@ -154,8 +179,8 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
         end
 
         % Check if this replicate has a better log-likelihood
-        if -logLikelihood < bestLogLikelihood
-            bestLogLikelihood = -logLikelihood;
+        if logLikelihood < bestLogLikelihood
+            bestLogLikelihood = logLikelihood;
             bestWeights = weights;
             bestMus = mus;
             bestSigmas = Sigmas;
@@ -176,12 +201,17 @@ function [bestNegLogLikelihood, weights, mus, Sigmas, AIC, BIC] = EM_Algorithm2(
     mus = bestMus;
     Sigmas = bestSigmas;
 
-    % Compute the AIC and BIC
-    p = numClusters * (1 + numDims + numDims); % Number of parameters
-    AIC = 2 * p + 2 * bestLogLikelihood;
-    BIC = log(numPoints) * p + 2 * bestLogLikelihood;
+    %% Compute the AIC and BIC
+    
+    % Number of parameters
+    nParam = size(data, 2) + numClusters - 1 + numClusters * size(data, 2); 
+    
+    % Compute AIC and BIC
+    AIC = 2*nParam - 2 * bestLogLikelihood;
+    BIC = nParam*log(numPoints) - 2 * bestLogLikelihood;
 
-    % Display the replicate at which the best negative log-likelihood was found and its value
-    fprintf(['Best negative log-likelihood found to be: %e at Replicate: ' ...
-        '%d\n'], bestLogLikelihood, bestReplicate);
+    % Create a structure that contains the parameters, log-likelihood, AIC, and BIC
+    GMM = struct('weights', gather(weights), 'mus', gather(mus), 'Sigmas', ...
+                  gather(Sigmas),'logLikelihood', gather(bestLogLikelihood), ...
+                  'AIC', gather(AIC), 'BIC', gather(BIC));
 end

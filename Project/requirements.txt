@@ -1,0 +1,6 @@
+lightkit >= 0.5, < 1.0.0
+numpy >= 1.20.3, < 2.0.0
+pytorch-lightning >= 1.6, < 2.0
+torchmetrics >= 0.6, < 0.12
+pycave >=3.2, < 4.0
+matplotlib
