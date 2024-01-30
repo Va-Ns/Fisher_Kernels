@@ -72,7 +72,7 @@ function GMM = GMM_NV(data, numClusters, Options)
                 % deviations of the j-th cluster.
 
                 Log_Likelihood(:,j) = sum(bsxfun(@rdivide, bsxfun(@minus, ...
-                                                data, mus(j,:)), L).^2, 2);
+                                                 data, mus(j,:)), L).^2, 2);
                 %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % This line calculates the squared Mahalanobis distance 
                 % from each data point to the mean of the j-th cluster, 
