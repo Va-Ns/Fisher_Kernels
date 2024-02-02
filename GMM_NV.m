@@ -138,17 +138,20 @@ function GMM = GMM_NV(data, numClusters, Options)
                 % Create a logical index vector that identifies the data 
                 % points for which the responsibility towards the current 
                 % cluster j is greater than zero.
+
                 mus(j,:) = Responsibilities_j * data / sum(Responsibilities_j);
                 %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % Update the mean vector mus for the current cluster j. 
                 % The new mean is the weighted average of all data points, 
                 % where the weights are the responsibilities. This is the 
                 % expected value of the data given the current responsibilities
+
                 Centered_Data = data(Nonzero_idx,:) - mus(j,:);
                 %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % Computes the centered data by subtracting the new mean 
                 % mus(j,:) from the data points that have non-zero 
                 % responsibility towards the current cluster j.
+
                 Sigmas(j,:) = Responsibilities_j(Nonzero_idx) *... 
                               (Centered_Data.^2) / sum(Responsibilities_j(Nonzero_idx)) +...
                                1e-6;
@@ -160,6 +163,7 @@ function GMM = GMM_NV(data, numClusters, Options)
                 % numerical stability, to prevent division by zero or 
                 % taking the square root of a negative number in subsequent
                 % computations.
+                
                 weights(j) = sum(Responsibilities_j) / numPoints;
                 %^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % This line updates the weight for the current cluster j. 

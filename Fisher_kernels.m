@@ -43,9 +43,8 @@ GMMs = cell(1, numModels);
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d ",i)
-    GMMs{i} = GMM_NV(FeatureMatrix.Reduced_SIFT_Features_Matrix, i, ...
-                     "NumReplicates",1); 
-    logLikelihoods(i) = GMMs{i}.logLikelihood;
+    GMMs{i} = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i); 
+    logLikelihoods(i) = GMMs{i}.NegLogLikelihood;
     AICs(i) = GMMs{i}.AIC;
     BICs(i) = GMMs{i}.BIC;
     fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods(i))   
