@@ -5,10 +5,10 @@ function GMM = sEM(data,numClusters,Options)
         data (:,:) double {mustBeReal, mustBeFinite}
         numClusters (1,1) double {mustBeInteger, mustBePositive,...
                                   mustBeNonempty,mustBeNonzero,mustBeNonmissing}
-        Options.MaxIterations (1,1) double {mustBeInteger, mustBePositive} = 1000;
-        Options.Tolerance (1,1) double {mustBeReal, mustBeFinite} = 1e-8;
+        Options.MaxIterations (1,1) double {mustBeInteger, mustBePositive} = 100;
+        Options.Tolerance (1,1) double {mustBeReal, mustBeFinite} = 1e-6;
         Options.Alpha     (1,1) double  {mustBeInRange(Options.Alpha,0.5,1),...
-                                        mustBePositive, mustBeFloat} = 0.7
+                                        mustBePositive, mustBeFloat} = 0.8
         Options.BatchSize     (1,1) double {mustBeInRange(Options.BatchSize, ...
                                             1,1000000),mustBePositive,... 
                                             mustBeInteger} = 10000
@@ -38,13 +38,13 @@ function GMM = sEM(data,numClusters,Options)
     % Compute constant term
     constTerm = dimFeatures*log(2*pi)/2;
     
+    %% Perform the initialization of the Responsibilities
     weights = gpuArray(ones(1, numClusters) / numClusters); % Equal weights
     warning("off")
     [~, mus] = kmeans(gpuArray(data), numClusters, 'MaxIter',numIterations); % Initialize means using kmeans
     Sigmas = gpuArray(ones(numClusters, dimFeatures)); % Unit variances
     
     for j = 1:numClusters
-
 
         log_prior = log(weights(j));
 
@@ -63,7 +63,7 @@ function GMM = sEM(data,numClusters,Options)
 
     MaxLogLikelihood = max(Log_Likelihood,[],2);
     Responsibilities = exp(Log_Likelihood-MaxLogLikelihood);
-
+%% Apply the stepwise Expectation Maximization
     for i = 1 : numIterations
     
         % Create a random order in the data
@@ -75,7 +75,7 @@ function GMM = sEM(data,numClusters,Options)
         % Create a random order for the batches
         batchOrder = gpuArray(randperm(numBatches));
     
-        for j = 1 : numBatches
+        for j = 1 : numBatches % Here the examples are the batches of data
     
             eta_k = (k+2)^(-a);
     
@@ -92,16 +92,14 @@ function GMM = sEM(data,numClusters,Options)
 
             % Update and normalize responsibilities
             Responsibilities(batchIndices, :) = ((1-eta_k)*Responsibilities(batchIndices, :) ...
-                                                + (eta_k * s_i)) ./ ...
-                                                sum((1-eta_k)*Responsibilities(batchIndices, :) + ...
-                                                (eta_k * s_i), 2);
+                                                + (eta_k * s_i));
             k = k + 1;
         end
         
         % Calculate log-likelihood after updating all batches
         Density = sum(Responsibilities, 2);
         Logpdf = log(Density) + MaxLogLikelihood;
-        LogLikelihood = sum(Logpdf) / numPoints;
+        LogLikelihood = sum(Logpdf) / numBatches;
         
 
         % Check for convergence

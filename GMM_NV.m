@@ -94,14 +94,14 @@ function GMM = GMM_NV(data, numClusters, Options)
             end
 
             MaxLogLikelihood = max(Log_Likelihood,[],2);
-            responsibilities = exp(Log_Likelihood-MaxLogLikelihood); 
+            Responsibilities = exp(Log_Likelihood-MaxLogLikelihood); 
                                                                      % To avoid numerical 
                                                                      % underflow,normalize 
                                                                      % the responsibilities 
                                                                      % and exponentiate. 
             
             
-            Density = sum(responsibilities,2);
+            Density = sum(Responsibilities,2);
             % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
             %  This line computes the sum of the responsibilities for each 
             % data point across all clusters. The result is a column vector
@@ -118,7 +118,7 @@ function GMM = GMM_NV(data, numClusters, Options)
             % ^^^^^^^^^^^^^^^^^^^^^^^^^^
             % Τhis line computes the total log-likelihood, which is the sum
             % of the log-pdfs for all data points.
-            responsibilities = responsibilities./Density; % Νormalize Responsibilities
+            Responsibilities = Responsibilities./Density; % Νormalize Responsibilities
 
             %% M-step: Update the parameters using the current responsibilities
             
@@ -126,7 +126,7 @@ function GMM = GMM_NV(data, numClusters, Options)
 
                 % For each cluster
 
-                Responsibilities_j = responsibilities(:,j)';
+                Responsibilities_j = Responsibilities(:,j)';
                 % ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
                 % Extract the responsibilities of all data points for the 
                 % current cluster j. The responsibilities represent the 
