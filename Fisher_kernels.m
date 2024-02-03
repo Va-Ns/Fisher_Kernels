@@ -42,7 +42,7 @@ GMMs = cell(1, numModels);
 
 for i = 1 : numModels
 
-    fprintf("Number of cluster:%d ",i)
+    fprintf("Number of cluster:%d \n",i)
     GMMs{i} = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i); 
     logLikelihoods(i) = GMMs{i}.NegLogLikelihood;
     AICs(i) = GMMs{i}.AIC;
@@ -51,7 +51,7 @@ for i = 1 : numModels
     
 end
 
-plot(-logLikelihoods,'.','LineWidth', 2, 'MarkerSize',10, ...
+plot(-logLikelihoods,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
 title("Negative Log-Likelihood over Number of Clusters")
 xlabel("Number of Clusters")

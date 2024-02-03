@@ -22,20 +22,20 @@ function GMM = sEM(data,numClusters,Options)
     a = Options.Alpha;
     convergenceThreshold = Options.Tolerance; % Set a threshold for convergence
 
-    % Partition the data into batches
-    m = Options.BatchSize; % Batch size
+    %% Partition the data into batches
+    m = Options.BatchSize; 
     numBatches = ceil(numPoints / m);
     
-    % Calculate the number of points after padding
+    %% Calculate the number of points after padding
     numPointsPadded = numBatches * m;
     
-    % Initialize log-likelihood
+    %% Initialize log-likelihood
     oldLogLikelihood = -inf;
 
-    % Preallocate log_lh
+    %% Preallocate log_lh
     Log_Likelihood = gpuArray.zeros(numPoints, numClusters);
 
-    % Compute constant term
+    %% Compute constant term
     constTerm = dimFeatures*log(2*pi)/2;
     
     %% Perform the initialization of the Responsibilities
@@ -63,7 +63,9 @@ function GMM = sEM(data,numClusters,Options)
 
     MaxLogLikelihood = max(Log_Likelihood,[],2);
     Responsibilities = exp(Log_Likelihood-MaxLogLikelihood);
+
 %% Apply the stepwise Expectation Maximization
+
     for i = 1 : numIterations
     
         % Create a random order in the data
@@ -101,26 +103,56 @@ function GMM = sEM(data,numClusters,Options)
         Logpdf = log(Density) + MaxLogLikelihood;
         LogLikelihood = sum(Logpdf) / numBatches;
         
+        % Calculate the statistics
+        for j = 1:numClusters
 
-        % Check for convergence
+            Responsibilities_j = Responsibilities(:,j)';
+
+
+            Nonzero_idx = Responsibilities_j > 0;
+
+
+            mus(j,:) = Responsibilities_j * data / sum(Responsibilities_j);
+
+
+            Centered_Data = data(Nonzero_idx,:) - mus(j,:);
+
+
+            Sigmas(j,:) = Responsibilities_j(Nonzero_idx) *...
+                          (Centered_Data.^2) / sum(Responsibilities_j(Nonzero_idx)) + 1e-6;
+
+
+            weights(j) = sum(Responsibilities_j) / numPoints;
+
+        end
+
+        %% Check for convergence, calculate AIC and BIC and place the statistics to the struct
+        
         if abs(LogLikelihood - oldLogLikelihood) < convergenceThreshold || i == Options.MaxIterations
 
-            fprintf('Converged in %d iterations\n', i);
+                fprintf("Converged in iteration %d",i)
 
                 % Update best log likelihood
                 bestLogLikelihood = LogLikelihood;
 
-                %% Calculate negative log likelihood, AIC, and BIC
-                NegLogLikelihood = -bestLogLikelihood;
+                %% Calculate AIC and BIC
+                
+                nParam = size(data, 2) + numClusters - 1 + numClusters * ...
+                                                             size(data, 2);
 
-                nParam = size(data, 2) + numClusters - 1 + numClusters * size(data, 2);
                 AIC = 2 * nParam - 2 * bestLogLikelihood;
                 BIC = nParam * log(numPoints) - 2 * bestLogLikelihood;
+
+                %% Place the best found statistics in the struct
+                NegLogLikelihood = -bestLogLikelihood;
 
                 % Update the struct with the new results
                 GMM.NegLogLikelihood = NegLogLikelihood;
                 GMM.AIC = AIC;
                 GMM.BIC = BIC;
+                GMM.Weights = weights;
+                GMM.Mus = mus;
+                GMM.Sigmas = Sigmas;
             
             break;
         end
