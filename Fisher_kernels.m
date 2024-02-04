@@ -67,12 +67,16 @@ xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 
 %% Για τα SIFT δεδομένα
+
+% Calculate the index for one third of the data
+oneFourthIndex = floor(size(FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
 tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i,"Alpha",0.5); 
+    GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:), ...
+               i,"Alpha",0.5); 
     logLikelihoods_SIFT(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_SIFT{i} = GMMs.Log_Likelihood;
 

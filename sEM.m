@@ -14,7 +14,7 @@ function GMM = sEM(data,numClusters,Options)
                                             mustBeInteger} = 10000
                                         
     end
-
+    
     [numPoints, dimFeatures] = size(data);
        
     k = 0;
@@ -53,7 +53,7 @@ function GMM = sEM(data,numClusters,Options)
         L = sqrt(Sigmas(j, :));
 
         Log_Likelihood(:,j) = sum(bsxfun(@rdivide, bsxfun(@minus, ...
-            data, mus(j,:)), L).^2, 2);
+            data, gather(mus(j,:))), L).^2, 2);
 
         Log_Likelihood(:,j) = -0.5*(Log_Likelihood(:,j) + logDetSigma);
 
