@@ -37,22 +37,43 @@ numModels = 200;
 logLikelihoods = zeros(1, numModels);
 AICs = zeros(1, numModels);
 BICs = zeros(1, numModels);
-GMMs = cell(1, numModels);
+Responsibilities = cell(1, numModels);
 
-
+tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
-    GMMs{i} = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i); 
-    logLikelihoods(i) = GMMs{i}.NegLogLikelihood;
-    AICs(i) = GMMs{i}.AIC;
-    BICs(i) = GMMs{i}.BIC;
+    GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i,"Alpha",0.5); 
+    logLikelihoods(i) = GMMs.NegLogLikelihood;
+    AICs(i) = GMMs.AIC;
+    BICs(i) = GMMs.BIC;
+    Responsibilities{i} = GMMs.Responsibilities;
     fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods(i))   
     
 end
+sEM_time = toc
 
 plot(-logLikelihoods,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
 title("Negative Log-Likelihood over Number of Clusters")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
+
+%% Calculate the statistics
+
+for j = 1:numClusters
+
+    Responsibilities_j = Responsibilities(:,j)';
+
+    Nonzero_idx = Responsibilities_j > 0;
+
+    mus(j,:) = Responsibilities_j * data / sum(Responsibilities_j);
+
+    Centered_Data = data(Nonzero_idx,:) - mus(j,:);
+
+    Sigmas(j,:) = Responsibilities_j(Nonzero_idx) *...
+        (Centered_Data.^2) / sum(Responsibilities_j(Nonzero_idx)) + 1e-6;
+
+    weights(j) = sum(Responsibilities_j) / numPoints;
+
+end

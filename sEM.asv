@@ -44,39 +44,39 @@ function GMM = sEM(data,numClusters,Options)
     [~, mus] = kmeans(gpuArray(data), numClusters, 'MaxIter',numIterations); % Initialize means using kmeans
     Sigmas = gpuArray(ones(numClusters, dimFeatures)); % Unit variances
     
-    for j = 1:numClusters
-
-        log_prior = log(weights(j));
-
-        logDetSigma = sum(log(Sigmas(j, :)));
-
-        L = sqrt(Sigmas(j, :));
-
-        Log_Likelihood(:,j) = sum(bsxfun(@rdivide, bsxfun(@minus, ...
-            data, mus(j,:)), L).^2, 2);
-
-        Log_Likelihood(:,j) = -0.5*(Log_Likelihood(:,j) + logDetSigma);
-
-        Log_Likelihood(:,j) = Log_Likelihood(:,j) + log_prior - constTerm;
-
-    end
-
-    MaxLogLikelihood = max(Log_Likelihood,[],2);
-    Responsibilities = exp(Log_Likelihood-MaxLogLikelihood);
-    % Vectorized calculation of log-likelihoods
-    % log_prior = log(weights);
-    % logDetSigma = sum(log(Sigmas), 2);
-    % L = sqrt(Sigmas);
-    % Log_Likelihood = zeros(size(data, 1), size(mus, 1));  % Initialize Log_Likelihood
+    % for j = 1:numClusters
     % 
-    % for k = 1:size(mus, 1)
-    %     Log_Likelihood(:, k) = -0.5 * sum(((data - mus(k, :)) ./ ...
-    %                            L(k, :)).^2, 2) + log_prior(k) - constTerm;
+    %     log_prior = log(weights(j));
+    % 
+    %     logDetSigma = sum(log(Sigmas(j, :)));
+    % 
+    %     L = sqrt(Sigmas(j, :));
+    % 
+    %     Log_Likelihood(:,j) = sum(bsxfun(@rdivide, bsxfun(@minus, ...
+    %         data, mus(j,:)), L).^2, 2);
+    % 
+    %     Log_Likelihood(:,j) = -0.5*(Log_Likelihood(:,j) + logDetSigma);
+    % 
+    %     Log_Likelihood(:,j) = Log_Likelihood(:,j) + log_prior - constTerm;
+    % 
     % end
     % 
-    % % Vectorized calculation of responsibilities
     % MaxLogLikelihood = max(Log_Likelihood,[],2);
-    % Responsibilities = exp(bsxfun(@minus, Log_Likelihood, MaxLogLikelihood));
+    % Responsibilities = exp(Log_Likelihood-MaxLogLikelihood);
+    % Vectorized calculation of log-likelihoods
+    log_prior = log(weights);
+    logDetSigma = sum(log(Sigmas), 2);
+    L = sqrt(Sigmas);
+    Log_Likelihood = zeros(size(data, 1), size(mus, 1));  % Initialize Log_Likelihood
+    
+    for k = 1:size(mus, 1)
+        Log_Likelihood(:, k) = -0.5 * sum(((data - mus(k, :)) ./ ...
+                               L(k, :)).^2, 2) + log_prior(k) - constTerm;
+    end
+    
+    % Vectorized calculation of responsibilities
+    MaxLogLikelihood = max(Log_Likelihood,[],2);
+    Responsibilities = exp(bsxfun(@minus, Log_Likelihood, MaxLogLikelihood));
 
 %% Apply the stepwise Expectation Maximization
 
@@ -117,33 +117,49 @@ function GMM = sEM(data,numClusters,Options)
         Logpdf = log(Density) + MaxLogLikelihood;
         LogLikelihood = sum(Logpdf) / numBatches;
         
+        % Calculate the statistics
+        for j = 1:numClusters
 
-        % Calculate the sum of responsibilities for each cluster
-        % sumResponsibilities = sum(Responsibilities, 1);
-        %
-        % Calculate the new means for each cluster
-        % mus = (Responsibilities' * data) ./ sumResponsibilities';
-        %
-        % Initialize an empty matrix to store the centered data
-        % Centered_Data = zeros(size(data));
-        %
-        % Loop over each cluster
-        % for j = 1:size(mus, 1)
-            % Subtract the mean of the j-th cluster from the data
-            % Centered_Data(j, :) = data(j, :) - mus(j, :);
-        % end
-        % Calculate the new variances for each cluster
-        % Sigmas = (Responsibilities' * (Centered_Data.^2)) ./ sumResponsibilities' + 1e-6;
-        %
-        % Calculate the new weights for each cluster
-        % weights = sumResponsibilities / numPoints;
+            Responsibilities_j = Responsibilities(:,j)';
+
+
+            Nonzero_idx = Responsibilities_j > 0;
+
+
+            mus(j,:) = Responsibilities_j * data / sum(Responsibilities_j);
+
+
+            Centered_Data = data(Nonzero_idx,:) - mus(j,:);
+
+
+            Sigmas(j,:) = Responsibilities_j(Nonzero_idx) *...
+                          (Centered_Data.^2) / sum(Responsibilities_j(Nonzero_idx)) + 1e-6;
+
+
+            weights(j) = sum(Responsibilities_j) / numPoints;
+
+        end
+
+        %% Testing site
+
+        % Vectorized calculation of new means
+        mus2 = (Responsibilities' * data) ./ sum(Responsibilities, 1)';
+        
+        % Vectorized calculation of new variances
+        Centered_Data2 = bsxfun(@minus, data, mus2(Responsibilities > 0, :));
+        Sigmas2 = (Responsibilities(Responsibilities > 0)' * (Centered_Data.^2)) ./ sum(Responsibilities(Responsibilities > 0))' + 1e-6;
+        
+        % Vectorized calculation of new weights
+        weights = sum(Responsibilities, 1) / numPoints;
+        %% Check for convergence, calculate AIC and BIC and place the statistics to the struct
+        
         if abs(LogLikelihood - oldLogLikelihood) < convergenceThreshold || i == Options.MaxIterations
 
                 fprintf("Converged in iteration %d",i)
 
                 % Update best log likelihood
                 bestLogLikelihood = LogLikelihood;
-                
+
                 %% Calculate AIC and BIC
                 
                 nParam = size(data, 2) + numClusters - 1 + numClusters * ...
@@ -159,7 +175,9 @@ function GMM = sEM(data,numClusters,Options)
                 GMM.NegLogLikelihood = NegLogLikelihood;
                 GMM.AIC = AIC;
                 GMM.BIC = BIC;
-                GMM.Responsibilities = Responsibilities;
+                GMM.Weights = weights;
+                GMM.Mus = mus;
+                GMM.Sigmas = Sigmas;
             
             break;
         end
