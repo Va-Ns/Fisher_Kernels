@@ -33,33 +33,59 @@ preprocessing_time = toc
 %% Gaussian Mixture Model
 
 %step = 10;
-numModels = 200;
-logLikelihoods = zeros(1, numModels);
+numModels = 128;
+logLikelihoods_SIFT = zeros(1, numModels);
+Log_Likelihoods_SIFT = cell(1, numModels);
+logLikelihoods_RGB = zeros(1, numModels);
+Log_Likelihoods_RGB = cell(1, numModels);
+
 AICs = zeros(1, numModels);
 BICs = zeros(1, numModels);
-Responsibilities = cell(1, numModels);
-Log_Likelihoods = cell(1, numModels);
 
+Responsibilities_SIFT = cell(1, numModels);
+Responsibilities_RGB = cell(1, numModels);
+
+%% Για τα RGB δεδομένα
 tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
-    
-    GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i,"Alpha",0.5); 
-    logLikelihoods(i) = GMMs.NegLogLikelihood;
-    Log_Likelihoods{i} = GMMs.Log_Likelihood;
 
-    fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods(i))   
+    GMMs = sEM(FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5); 
+    logLikelihoods_RGB(i) = GMMs.NegLogLikelihood;
+    Log_Likelihoods_RGB{i} = GMMs.Log_Likelihood;
+
+    fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods_RGB(i))   
     
 end
-sEM_time = toc
+sEM_RGB_time = toc
 
-plot(-logLikelihoods,'o','LineWidth', 2, 'MarkerSize',10, ...
+plot(-logLikelihoods_RGB,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
 title("Negative Log-Likelihood over Number of Clusters")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 
+%% Για τα SIFT δεδομένα
+tic
+for i = 1 : numModels
+
+    fprintf("Number of cluster:%d \n",i)
+
+    GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i,"Alpha",0.5); 
+    logLikelihoods_SIFT(i) = GMMs.NegLogLikelihood;
+    Log_Likelihoods_SIFT{i} = GMMs.Log_Likelihood;
+
+    fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods_SIFT(i))   
+    
+end
+sEM_SIFT_time = toc
+
+plot(-logLikelihoods_SIFT,'o','LineWidth', 2, 'MarkerSize',10, ...
+                                                    'MarkerFaceColor', 'b')
+title("Negative Log-Likelihood over Number of Clusters")
+xlabel("Number of Clusters")
+ylabel("Negative Log-Likelihood")
 %% Calculate the statistics
 
 for j = 1:numClusters
