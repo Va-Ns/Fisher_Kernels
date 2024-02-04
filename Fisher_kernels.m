@@ -38,15 +38,17 @@ logLikelihoods = zeros(1, numModels);
 AICs = zeros(1, numModels);
 BICs = zeros(1, numModels);
 Responsibilities = cell(1, numModels);
+Log_Likelihoods = cell(1, numModels);
 
 tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
+    
     GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix, i,"Alpha",0.5); 
     logLikelihoods(i) = GMMs.NegLogLikelihood;
-    AICs(i) = GMMs.AIC;
-    BICs(i) = GMMs.BIC;
+    Log_Likelihoods{i} = GMMs.Log_Likelihood;
+
     fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods(i))   
     
 end
@@ -76,3 +78,11 @@ for j = 1:numClusters
     weights(j) = sum(Responsibilities_j) / numPoints;
 
 end
+
+%% Calculate AIC and BIC
+
+nParam = size(data, 2) + numClusters - 1 + numClusters * ...
+    size(data, 2);
+
+AIC = 2 * nParam - 2 * bestLogLikelihood;
+BIC = nParam * log(numPoints) - 2 * bestLogLikelihood;

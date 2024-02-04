@@ -144,23 +144,13 @@ function GMM = sEM(data,numClusters,Options)
                 % Update best log likelihood
                 bestLogLikelihood = LogLikelihood;
                 
-                %% Calculate AIC and BIC
-                
-                nParam = size(data, 2) + numClusters - 1 + numClusters * ...
-                                                             size(data, 2);
-
-                AIC = 2 * nParam - 2 * bestLogLikelihood;
-                BIC = nParam * log(numPoints) - 2 * bestLogLikelihood;
-
                 %% Place the best found statistics in the struct
                 NegLogLikelihood = -bestLogLikelihood;
 
                 % Update the struct with the new results
                 GMM.NegLogLikelihood = NegLogLikelihood;
-                GMM.AIC = AIC;
-                GMM.BIC = BIC;
+                GMM.Log_Likelihood = tall(gather(Log_Likelihood));
               
-            
             break;
         end
 
