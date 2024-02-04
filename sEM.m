@@ -159,7 +159,7 @@ function GMM = sEM(data,numClusters,Options)
                 GMM.NegLogLikelihood = NegLogLikelihood;
                 GMM.AIC = AIC;
                 GMM.BIC = BIC;
-                GMM.Responsibilities = Responsibilities;
+              
             
             break;
         end

@@ -47,7 +47,6 @@ for i = 1 : numModels
     logLikelihoods(i) = GMMs.NegLogLikelihood;
     AICs(i) = GMMs.AIC;
     BICs(i) = GMMs.BIC;
-    Responsibilities{i} = GMMs.Responsibilities;
     fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods(i))   
     
 end
