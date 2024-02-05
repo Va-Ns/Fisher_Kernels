@@ -62,7 +62,7 @@ sEM_RGB_time = toc
 
 plot(-logLikelihoods_RGB,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
-title("Negative Log-Likelihood over Number of Clusters for RGB features")
+title("Negative Log-Likelihood over Number of Clusters")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 
@@ -87,7 +87,7 @@ sEM_SIFT_time = toc
 
 plot(-logLikelihoods_SIFT,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
-title("Negative Log-Likelihood over Number of Clusters for SIFT features")
+title("Negative Log-Likelihood over Number of Clusters for RGB features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 %% Calculate the statistics
