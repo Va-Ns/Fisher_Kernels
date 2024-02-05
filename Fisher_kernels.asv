@@ -71,13 +71,13 @@ ylabel("Negative Log-Likelihood")
 
 % Calculate the index for one third of the data
 oneFourthIndex = floor(size(FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
-SIFT_data = gpuArray(FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(SIFT_data,i,"Alpha",0.5); 
+    GMMs = sEM(FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:), ...
+               i,"Alpha",0.5); 
     logLikelihoods_SIFT(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_SIFT{i} = GMMs.Log_Likelihood;
 
@@ -92,18 +92,11 @@ grid on
 title("Negative Log-Likelihood over Number of Clusters for SIFT features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
-%% Calculate the statistics for the SIFT and RGB features
-RGB_data = gpuArray(FeatureMatrix.Reduced_RGB_Features_Matrix);
+%% Calculate the statistics for the SIFT features
+SIFT_data = gpuArray(FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
-clear FeatureMatrix
+CalculateStatisticsNV(SIFT_data,)
 
-GMM_Params = CalculateParamsNV(SIFT_data,RGB_data, ...
-                                   Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
-
-
-%% Data Generation
-
-gmdistribution(GMM_Params(end).SIFT_mus,GMM_Params(end).SIFT_Sigmas,GMM_Params(end).SIFT_weights);
 %% Calculate AIC and BIC
 
 nParam = size(data, 2) + numClusters - 1 + numClusters * ...
