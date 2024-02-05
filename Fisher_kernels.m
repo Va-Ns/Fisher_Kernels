@@ -60,8 +60,9 @@ for i = 1 : numModels
 end
 sEM_RGB_time = toc
 
-plot(-logLikelihoods_RGB,'o','LineWidth', 2, 'MarkerSize',10, ...
+plot(logLikelihoods_RGB,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
+grid on
 title("Negative Log-Likelihood over Number of Clusters for RGB features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
@@ -85,28 +86,45 @@ for i = 1 : numModels
 end
 sEM_SIFT_time = toc
 
-plot(-logLikelihoods_SIFT,'o','LineWidth', 2, 'MarkerSize',10, ...
+plot(logLikelihoods_SIFT,'o','LineWidth', 2, 'MarkerSize',10, ...
                                                     'MarkerFaceColor', 'b')
+grid on
 title("Negative Log-Likelihood over Number of Clusters for SIFT features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
-%% Calculate the statistics
+%% Calculate the statistics for the SIFT features
+SIFT_data = gpuArray(FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
-for j = 1:numClusters
+for j = 1:numModels
+        
+    Corr_LogLikelihood = gather(Log_Likelihoods_SIFT{j});
 
-    Responsibilities_j = Responsibilities(:,j)';
+    get_numCluster = size(Corr_LogLikelihood,2);
 
-    Nonzero_idx = Responsibilities_j > 0;
+    MaxCorrLogLikelihood = max(Corr_LogLikelihood,[],2);
+    Responsibilities = gpuArray(exp(Corr_LogLikelihood - MaxCorrLogLikelihood));
 
-    mus(j,:) = Responsibilities_j * data / sum(Responsibilities_j);
+    for k = 1 : get_numCluster
 
-    Centered_Data = data(Nonzero_idx,:) - mus(j,:);
+        Responsibilities_k = Responsibilities(:,k)';
+    
+        Nonzero_idx = Responsibilities_k > 0;
+    
+        mus(k,:) = Responsibilities_k * data...
+                                                    / sum(Responsibilities_k);
+    
+        Centered_Data = data(Nonzero_idx,:) - mus(k,:);
+    
+        Sigmas(k,:) = Responsibilities_k(Nonzero_idx) *...
+            (Centered_Data.^2) / sum(Responsibilities_k(Nonzero_idx)) + 1e-6;
+    
+        weights(k) = sum(Responsibilities_k) / size(data,1);
 
-    Sigmas(j,:) = Responsibilities_j(Nonzero_idx) *...
-        (Centered_Data.^2) / sum(Responsibilities_j(Nonzero_idx)) + 1e-6;
+    end
 
-    weights(j) = sum(Responsibilities_j) / numPoints;
-
+    GMM_Params(j).mus = gather(mus);
+    GMM_Params(j).Sigmas = gather(Sigmas);
+    GMM_Params(j).weights = gather(weights);
 end
 
 %% Calculate AIC and BIC
