@@ -97,7 +97,6 @@ RGB_data = gpuArray(FeatureMatrix.Reduced_RGB_Features_Matrix);
 
 clear FeatureMatrix
 
-% The GMM parameters are basically the Visual Vocabulary 
 GMM_Params = CalculateParamsNV(SIFT_data,RGB_data, ...
                                    Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
 
