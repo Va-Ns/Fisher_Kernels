@@ -23,13 +23,13 @@ function Fisher_Kernel = gradientVectorsNV(GMM_Params,features)
             currentFeatureMatrix = features(numImages).reduced_SIFT_features;
             
             % Initialize the covariance matrices
-            covMatrices = zeros(1, dimFeatures, numClusters);
+            covMatrices = zeros(1, dimFeatures, Cluster);
 
             % Loop over each cluster
 
             for i = 1:Cluster
                 % Create a square diagonal matrix from the covariance vector
-                covMatrices(1, :, i) = GMM_Params(Cluster).SIFT_Sigmas(i, :);
+                covMatrices(1, :, i) = Sigmas(i, :);
             end
             
             % Create a gmdistribution object
@@ -40,13 +40,13 @@ function Fisher_Kernel = gradientVectorsNV(GMM_Params,features)
             F_k = (currentFeatureMatrix - Means(Cluster, :)) ./ Sigmas(:, :, Cluster);
 
             % Weight by posterior probability and cluster weight
-            F_k = F_k .* posterior(:, k) / sqrt(Weights(k));
+            F_k = F_k .* ImagePosterior(:, Cluster) / sqrt(Weights(Cluster));
 
             % Sum over all descriptors
             F_k = sum(F_k, 1);
 
             % Concatenate to gradient vector
-            gradient_vector(1, (Cluster-1)*2*dimFeatures+1:Cluster*2*dimFeatures) = F_k;
+            gradient_vector(1, (Cluster-1)*dimFeatures+1:Cluster*dimFeatures) = F_k;
 
 
         end
