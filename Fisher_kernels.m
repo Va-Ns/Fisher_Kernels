@@ -15,20 +15,34 @@ imds = imageDatastore(filelocation);
 tic
 new_imds = assignLabels(imds,yolo);
 clear yolo
+
+%% Partition the data into training and testing sets
+
+% splitDatastore = splitEachLabel(new_imds,1/4);
+newlabels = countEachLabel(new_imds);
+
+[Trainds,Testds] = splitTheDatastore(new_imds,newlabels);
+
 %% Feature Extraction
 tic
-features = extractImageFeatures(new_imds);
+Training_features = extractImageFeatures(Trainds);
+Testing_features = extractImageFeatures(Testds);
 toc
 
 %% Create a struct that contains the vertically concatenated features 
 
 % Concatenate each feature category into a single matrix and put it into a
 % structure
+tic
 FeatureMatrix.SIFT_Features_Matrix = vertcat(features(:).SIFT_Features);
 FeatureMatrix.RGB_Features_Matrix = vertcat(features(:).RGBfeatures);
 FeatureMatrix.Reduced_SIFT_Features_Matrix = vertcat(features(:).reduced_SIFT_features);
 FeatureMatrix.Reduced_RGB_Features_Matrix = vertcat(features(:).reduced_RGB_features);
 preprocessing_time = toc
+
+
+
+
 
 %% Gaussian Mixture Model
 

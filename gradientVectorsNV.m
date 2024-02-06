@@ -15,15 +15,15 @@ function Fisher_Kernel = gradientVectorsNV(GMM_Params,features)
         for Cluster = 1 : numClusters
 
             % Get the current clusters parameters
-            Means = GMM_Params(Cluster).SIFT_mus;
-            Sigmas = GMM_Params(Cluster).SIFT_Sigmas;
-            Weights = GMM_Params(Cluster).SIFT_weights;
+            Means = gpuArray(GMM_Params(Cluster).SIFT_mus);
+            Sigmas = gpuArray(GMM_Params(Cluster).SIFT_Sigmas);
+            Weights = gpuArray(GMM_Params(Cluster).SIFT_weights);
 
             % Get the current feature matrix
-            currentFeatureMatrix = features(numImages).reduced_SIFT_features;
+            currentFeatureMatrix = gpuArray(features(numImages).reduced_SIFT_features);
             
             % Initialize the covariance matrices
-            covMatrices = zeros(1, dimFeatures, Cluster);
+            covMatrices = gpuArray(zeros(1, dimFeatures, Cluster));
 
             % Loop over each cluster
 
@@ -38,17 +38,18 @@ function Fisher_Kernel = gradientVectorsNV(GMM_Params,features)
 
             ImagePosterior = posterior(gmModel,currentFeatureMatrix);
             
-            F_k = (currentFeatureMatrix - Means(Cluster, :)) ./ covMatrices(:, :, Cluster);
+            % Compute F_k for the means
+            F_k_means = (currentFeatureMatrix - Means(Cluster, :)) ./ sqrt(covMatrices(:, :, Cluster));
+            F_k_means = F_k_means .* ImagePosterior(:, Cluster) / sqrt(Weights(Cluster));
+            F_k_means = sum(F_k_means, 1) / size(currentFeatureMatrix, 1);
 
-            % Weight by posterior probability and cluster weight
-            F_k = F_k .* ImagePosterior(:, Cluster) / sqrt(Weights(Cluster));
+            % Compute F_k for the variances
+            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2 - 1) ./ (2 * covMatrices(:, :, Cluster).^(3/2));
+            F_k_variances = F_k_variances .* ImagePosterior(:, Cluster) / sqrt(Weights(Cluster));
+            F_k_variances = sum(F_k_variances, 1) / size(currentFeatureMatrix, 1);
 
-            % Sum over all descriptors
-            F_k = sum(F_k, 1);
-
-            % Concatenate to gradient vector
-            gradient_vector(1, (Cluster-1)*dimFeatures+1:Cluster*dimFeatures) = F_k;
-
+            % Assign F_k_means and F_k_variances to gradient_vector
+            gradient_vector(1, (Cluster-1)*2*dimFeatures+1:Cluster*2*dimFeatures) = [F_k_means, F_k_variances];
 
         end
 
