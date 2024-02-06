@@ -102,8 +102,28 @@ GMM_Params = CalculateParamsNV(SIFT_data,RGB_data, ...
 
 
 %% Data Generation
+% 
+% % Get the number of clusters and features
+% numClusters = size(GMM_Params(end).SIFT_Sigmas, 1);
+% numFeatures = size(GMM_Params(end).SIFT_Sigmas, 2);
+% 
+% % Initialize the covariance matrices
+% covMatrices = zeros(1, numFeatures, numClusters);
+% 
+% % Loop over each cluster
+% for i = 1:numClusters
+%     % Create a square diagonal matrix from the covariance vector
+%     covMatrices(1, :, i) = GMM_Params(end).SIFT_Sigmas(i, :);
+% end
+% 
+% % Create a gmdistribution object
+% gmModel = gmdistribution(GMM_Params(end).SIFT_mus, covMatrices, GMM_Params(end).SIFT_weights);
+% Y = random(gmModel, size(SIFT_data,1));
 
-gmdistribution(GMM_Params(end).SIFT_mus,GMM_Params(end).SIFT_Sigmas,GMM_Params(end).SIFT_weights);
+%% Create the gradient vectors
+
+gradientVectors = gradientVectorsNV(GMM_Params,Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
+
 %% Calculate AIC and BIC
 
 nParam = size(data, 2) + numClusters - 1 + numClusters * ...
