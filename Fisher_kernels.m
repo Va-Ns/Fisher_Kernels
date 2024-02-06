@@ -122,12 +122,12 @@ GMM_Params = CalculateParamsNV(SIFT_data,RGB_data, ...
 
 %% Create the gradient vectors
 
-gradientVectors = gradientVectorsNV(GMM_Params,Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
+Fisher_Kernel = gradientVectorsNV(GMM_Params,Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
 
 %% Calculate AIC and BIC
 
-nParam = size(data, 2) + numClusters - 1 + numClusters * ...
-    size(data, 2);
-
-AIC = 2 * nParam - 2 * bestLogLikelihood;
-BIC = nParam * log(numPoints) - 2 * bestLogLikelihood;
+% nParam = size(data, 2) + numClusters - 1 + numClusters * ...
+%     size(data, 2);
+% 
+% AIC = 2 * nParam - 2 * bestLogLikelihood;
+% BIC = nParam * log(numPoints) - 2 * bestLogLikelihood;
