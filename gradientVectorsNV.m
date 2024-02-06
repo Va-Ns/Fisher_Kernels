@@ -34,10 +34,11 @@ function Fisher_Kernel = gradientVectorsNV(GMM_Params,features)
             
             % Create a gmdistribution object
             gmModel = gmdistribution(Means, covMatrices);
+            
 
             ImagePosterior = posterior(gmModel,currentFeatureMatrix);
             
-            F_k = (currentFeatureMatrix - Means(Cluster, :)) ./ Sigmas(:, :, Cluster);
+            F_k = (currentFeatureMatrix - Means(Cluster, :)) ./ covMatrices(:, :, Cluster);
 
             % Weight by posterior probability and cluster weight
             F_k = F_k .* ImagePosterior(:, Cluster) / sqrt(Weights(Cluster));
@@ -52,7 +53,7 @@ function Fisher_Kernel = gradientVectorsNV(GMM_Params,features)
         end
 
         % Update the Fisher Information Matrix
-            Fisher_Kernel = gradient_vector;
+            Fisher_Kernel(numImages,:) = gradient_vector;
 
     end
 
