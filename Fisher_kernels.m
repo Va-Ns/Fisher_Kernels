@@ -34,15 +34,11 @@ toc
 % Concatenate each feature category into a single matrix and put it into a
 % structure
 tic
-FeatureMatrix.SIFT_Features_Matrix = vertcat(features(:).SIFT_Features);
-FeatureMatrix.RGB_Features_Matrix = vertcat(features(:).RGBfeatures);
-FeatureMatrix.Reduced_SIFT_Features_Matrix = vertcat(features(:).reduced_SIFT_features);
-FeatureMatrix.Reduced_RGB_Features_Matrix = vertcat(features(:).reduced_RGB_features);
+% FeatureMatrix.SIFT_Features_Matrix = vertcat(features(:).SIFT_Features);
+% FeatureMatrix.RGB_Features_Matrix = vertcat(features(:).RGBfeatures);
+Training_FeatureMatrix.Reduced_SIFT_Features_Matrix = vertcat(Training_features(:).reduced_SIFT_features);
+Training_FeatureMatrix.Reduced_RGB_Features_Matrix = vertcat(Training_features(:).reduced_RGB_features);
 preprocessing_time = toc
-
-
-
-
 
 %% Gaussian Mixture Model
 
@@ -65,7 +61,7 @@ for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5); 
+    GMMs = sEM(Training_FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5,"BatchSize",100); 
     logLikelihoods_RGB(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_RGB{i} = GMMs.Log_Likelihood;
 
@@ -84,8 +80,8 @@ ylabel("Negative Log-Likelihood")
 %% Για τα SIFT δεδομένα
 
 % Calculate the index for one third of the data
-oneFourthIndex = floor(size(FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
-SIFT_data = gpuArray(FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
+oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
+SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 tic
 for i = 1 : numModels
 
@@ -107,9 +103,9 @@ title("Negative Log-Likelihood over Number of Clusters for SIFT features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 %% Calculate the statistics for the SIFT and RGB features
-RGB_data = gpuArray(FeatureMatrix.Reduced_RGB_Features_Matrix);
+RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
 
-clear FeatureMatrix
+clear Training_FeatureMatrix
 
 GMM_Params = CalculateParamsNV(SIFT_data,RGB_data, ...
                                    Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
