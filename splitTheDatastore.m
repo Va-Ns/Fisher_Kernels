@@ -24,9 +24,7 @@ function varargout = splitTheDatastore(datastore,newlabels, ...
 % Outputs: 
 %
 % => varargout:     As the name depicts, a variable argument output, that
-%                   based on the option variable returns the training and 
-%                   testing variables.If the optional variable's optional 
-%                   flag is true, then the function returns the table of 
+%                   based on flag, the function returns the table of 
 %                   training and testing datastores that contain both the 
 %                   labels and the count of them for the user to process.
 arguments (Input)

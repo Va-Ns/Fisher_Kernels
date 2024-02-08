@@ -82,16 +82,8 @@ ylabel("Negative Log-Likelihood")
 
 % Calculate the index for one third of the data
 oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
-<<<<<<< Updated upstream
-SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
-=======
-<<<<<<< HEAD
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
-=======
-SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
->>>>>>> 8cd373210f320ec677b36d19aa205b8417fd3d06
->>>>>>> Stashed changes
 tic
 for i = 1 : numModels
 
@@ -113,17 +105,9 @@ title("Negative Log-Likelihood over Number of Clusters for SIFT features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 %% Calculate the statistics for the SIFT and RGB features
-<<<<<<< Updated upstream
-RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
-=======
-<<<<<<< HEAD
 Training_RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
-=======
-RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
->>>>>>> 8cd373210f320ec677b36d19aa205b8417fd3d06
->>>>>>> Stashed changes
 
-clear Training_FeatureMatrix
+clear FeatureMatrix
 
 GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
                                Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
@@ -150,7 +134,7 @@ GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
 
 %% Create the gradient vectors
 
-Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features);
+Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features,"Selection","Don't Search");
 
 
 %% It's classification time

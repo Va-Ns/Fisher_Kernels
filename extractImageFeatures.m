@@ -1,4 +1,4 @@
-function features = extractImageFeatures(datastore,optional)
+function [features,removedIndices] = extractImageFeatures(datastore,optional)
 
 %% Description
 % -------------------------------------------------------------------------
@@ -66,6 +66,7 @@ i=0;
 reset(datastore)
 rows = zeros(length(datastore.Files),1);
 cols = zeros(length(datastore.Files),1);
+
 while hasdata(datastore)
     i=i+1;
     im = read(datastore);
@@ -83,7 +84,6 @@ imgSizeThresh = [minrows,mincols];
 resized_imds = transform(datastore,@(x)imresize(x,imgSizeThresh,"bilinear"));
 
 reset(resized_imds)
-i=0;
 
 %% Extract SIFT features from all the images
 
@@ -92,6 +92,7 @@ loadingIcons = ['-', '\', '|', '/']; % Loading icon sequence
 
 h = waitbar(0, 'Extracting SIFT features...'); warning("off")
 
+i=0;
 while hasdata(resized_imds)
 
     i=i+1;
@@ -113,6 +114,7 @@ while hasdata(resized_imds)
     region_SIFT_features = [];
 
     for r = 1:gridRows
+
         for c = 1:gridCols
 
             % Extract the region
@@ -136,6 +138,7 @@ while hasdata(resized_imds)
                     numel(loadingIcons)) + 1),percentComplete*100));
 
         end
+
     end
 
     features(i).SIFT_Features = [Global_SIFT_features;
@@ -149,10 +152,11 @@ close(h)
 %% Extract low-level RGB statistic features from all the images
 
 reset(resized_imds)
-i=0;
+
 
 h = waitbar(0, 'Extracting regional RGB features...'); warning("off")
 
+i=0;
 while hasdata(resized_imds)
 
     i=i+1;
@@ -169,11 +173,14 @@ while hasdata(resized_imds)
 
     % Calculate statistics for each region
     regionIndex = 1;
+
     for r = 1:gridRows
+
         for c = 1:gridCols
+            
             % Extract the region
             region = I((r-1)*regionHeight+1:r*regionHeight, ...
-                (c-1)*regionWidth+1:c*regionWidth, :);
+                                    (c-1)*regionWidth+1:c*regionWidth, :);
 
             % Calculate statistics for the region
             regionStats = [mean(region, [1,2]), ...
@@ -184,9 +191,12 @@ while hasdata(resized_imds)
             regionStats= reshape(regionStats,[1 12]);
 
             regionStats_reshaped(regionIndex,:) = regionStats;
+
             % Increment the region index
             regionIndex = regionIndex + 1;
+
         end
+
     end
 
     features(i).RGBfeatures = reshape(regionStats_reshaped,[1,96]);
@@ -205,18 +215,25 @@ close(h)
 %% Apply PCA to reduce to the optional number of features
 
 for i = 1:length(features)
+
     [~,features(i).SIFT_scores] = pca(features(i).SIFT_Features);
     [~,features(i).RGB_scores] = pca(features(i).RGBfeatures');
     features(i).SIFT_scores_size = size(features(i).SIFT_scores,2);
+    
 end
 
 %% Check that all data have at least the optional reduced features. If not delete them
+
+% Due to the nature of the data, some of them couldn't provide the optional
+% reduced features (here with dimensionality of 50), so they had to be
+% removed. Please pay attention to the difference between the Trainds and
+% the Training_features dimensionality!
 
 % Get the field names
 fields = fieldnames(features);
 
 % Initialize an empty array to hold the indices of elements to remove
-removeIndices = [];
+removedIndices = [];
 
 % Loop over each element of features
 for i = 1:length(features)
@@ -225,7 +242,9 @@ for i = 1:length(features)
 
     if features(i).SIFT_scores_size < optional.Feature_reduction ...
             || features(i).SIFT_scores_size > 128
-        removeIndices = [removeIndices, i];
+
+        removedIndices = [removedIndices, i];
+
         continue; % Skip to the next iteration, no need to check other
         % fields for this element
     end
@@ -237,7 +256,7 @@ for i = 1:length(features)
         if any(isnan(features(i).(fields{j})))
 
             % If there are, add the index to the removeIndices array
-            removeIndices = [removeIndices, i];
+            removedIndices = [removedIndices, i];
 
             break; % No need to check other fields for this element
         end
@@ -245,19 +264,20 @@ for i = 1:length(features)
 end
 
 % Remove the elements with indices in removeIndices from the features array
-features(removeIndices) = [];
+features(removedIndices) = [];
 
 
 for i = 1:length(features)
 
     % Select the minimum principal components as
     features(i).reduced_SIFT_features = features(i).SIFT_scores(:,1: ...
-        optional.Feature_reduction);
+                                               optional.Feature_reduction);
 
     % Select the first 50 principal components
     features(i).reduced_RGB_features = features(i).RGB_scores(1: ...
-        optional.Feature_reduction,:)';
+                                            optional.Feature_reduction,:)';
 end
+
 features = rmfield(features,{'SIFT_scores_size','SIFT_scores','RGB_scores'});
 end
 

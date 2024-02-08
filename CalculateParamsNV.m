@@ -1,5 +1,6 @@
 function GMM_Params = CalculateParamsNV(SIFT_data,RGB_data,Log_Likelihoods_SIFT,Log_Likelihoods_RGB)
-
+    
+    %% Create the parameters from the SIFT data
     for j = 1 : length(Log_Likelihoods_SIFT)
             
         Corr_LogLikelihood = gather(Log_Likelihoods_SIFT{j});
@@ -26,12 +27,13 @@ function GMM_Params = CalculateParamsNV(SIFT_data,RGB_data,Log_Likelihoods_SIFT,
     
         end
     
-        GMM_Params(j).SIFT_mus = gather(SIFT_mus);
-        GMM_Params(j).SIFT_Sigmas = gather(SIFT_Sigmas);
-        GMM_Params(j).SIFT_weights = gather(SIFT_weights);
+        GMM_Params(j).Training_SIFT_mus = gather(SIFT_mus);
+        GMM_Params(j).Training_SIFT_Sigmas = gather(SIFT_Sigmas);
+        GMM_Params(j).Training_SIFT_weights = gather(SIFT_weights);
 
     end
-
+    
+    %% Create the parameters from the RGB data
     for j = 1 : length(Log_Likelihoods_RGB)
             
         Corr_LogLikelihood = gather(Log_Likelihoods_RGB{j});
@@ -58,9 +60,9 @@ function GMM_Params = CalculateParamsNV(SIFT_data,RGB_data,Log_Likelihoods_SIFT,
     
         end
     
-        GMM_Params(j).RGB_mus = gather(RGB_mus);
-        GMM_Params(j).RGB_Sigmas = gather(RGB_Sigmas);
-        GMM_Params(j).RGB_weights = gather(RGB_weights);
+        GMM_Params(j).Training_RGB_mus = gather(RGB_mus);
+        GMM_Params(j).Training_RGB_Sigmas = gather(RGB_Sigmas);
+        GMM_Params(j).Training_RGB_weights = gather(RGB_weights);
 
     end
 
