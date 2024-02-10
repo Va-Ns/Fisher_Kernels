@@ -1,9 +1,11 @@
 clear;clc;close all
+rng(1)
 %%
+
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
 disp("Maximum number of workers: " + maxWorkers);
-pool=parpool(maxWorkers/2+2);
+pool=parpool(maxWorkers/2);
 %% Load the YOLOv4 Object Detector
 yolo = yolov4ObjectDetector("csp-darknet53-coco");
 
@@ -26,7 +28,7 @@ newlabels = countEachLabel(new_imds);
 %% Feature Extraction
 tic
 [Training_features,removedTrainingIndices] = extractImageFeatures(Trainds);
-[Testing_features,removedTestiningIndices]= extractImageFeatures(Testds);
+[Testing_features,removedTestingIndices]= extractImageFeatures(Testds);
 toc
 
 %% Create a struct that contains the vertically concatenated features 
@@ -37,8 +39,10 @@ toc
 tic
 % FeatureMatrix.SIFT_Features_Matrix = vertcat(features(:).SIFT_Features);
 % FeatureMatrix.RGB_Features_Matrix = vertcat(features(:).RGBfeatures);
-Training_FeatureMatrix.Reduced_SIFT_Features_Matrix = vertcat(Training_features(:).reduced_SIFT_features);
-Training_FeatureMatrix.Reduced_RGB_Features_Matrix = vertcat(Training_features(:).reduced_RGB_features);
+Training_FeatureMatrix.Reduced_SIFT_Features_Matrix = ...
+                       vertcat(Training_features(:).reduced_SIFT_features);
+Training_FeatureMatrix.Reduced_RGB_Features_Matrix = ...
+                        vertcat(Training_features(:).reduced_RGB_features);
 preprocessing_time = toc
 
 %% Gaussian Mixture Model
@@ -56,7 +60,7 @@ BICs = zeros(1, numModels);
 Responsibilities_SIFT = cell(1, numModels);
 Responsibilities_RGB = cell(1, numModels);
 
-%% Για τα RGB δεδομένα
+% Για τα RGB δεδομένα
 tic
 for i = 1 : numModels
 
@@ -78,20 +82,14 @@ title("Negative Log-Likelihood over Number of Clusters for RGB features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 
-%% Για τα SIFT δεδομένα
+% Για τα SIFT δεδομένα
 
 % Calculate the index for one third of the data
 oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
-<<<<<<< Updated upstream
-SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
-=======
-<<<<<<< HEAD
-Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
-=======
+Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
->>>>>>> 8cd373210f320ec677b36d19aa205b8417fd3d06
->>>>>>> Stashed changes
+
 tic
 for i = 1 : numModels
 
@@ -113,17 +111,9 @@ title("Negative Log-Likelihood over Number of Clusters for SIFT features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
 %% Calculate the statistics for the SIFT and RGB features
-<<<<<<< Updated upstream
-RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
-=======
-<<<<<<< HEAD
-Training_RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
-=======
-RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
->>>>>>> 8cd373210f320ec677b36d19aa205b8417fd3d06
->>>>>>> Stashed changes
 
-clear Training_FeatureMatrix
+Training_RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
+RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
 
 GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
                                Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
@@ -150,13 +140,28 @@ GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
 
 %% Create the gradient vectors
 
-Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features);
-
+Total_Training_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features);
+Total_Testing_Fisher_Kernel  = gradientVectorsNV(GMM_Params,Testing_features);
 
 %% It's classification time
 
+% Remove the corresponding indices from the labels 
+mask = true(1, numel(Trainds.Files));
+mask(removedTrainingIndices) = false;
 
+new_Trainds = subset(Trainds, mask);
 
+mask = true(1, numel(Testds.Files));
+mask(removedTestingIndices) = false;
+
+new_Testds = subset(Testds, mask);
+
+t = templateSVM('SaveSupportVectors',true,'Standardize',true,'Type', ...
+                    'classification');
+    [Model1,HyperparameterOptimizationResults] = fitcecoc(gpuArray(Total_Training_Fisher_Kernel), ...
+        [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
+        'OptimizeHyperparameters',{'BoxConstraint','KernelScale'}, ...
+        'HyperparameterOptimizationOptions',struct('KFold',10));
 
 %% Calculate AIC and BIC
 

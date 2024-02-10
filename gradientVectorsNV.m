@@ -1,26 +1,26 @@
-function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features)
+function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
 
     arguments
     
         GMM_Params          {mustBeUnderlyingType(GMM_Params,'struct')}
     
-        Training_features   {mustBeUnderlyingType(Training_features,'struct')}
+        Features   {mustBeUnderlyingType(Features,'struct')}
     
     end
 
-    dimFeatures = size(Training_features(1).reduced_RGB_features,2);
+    dimFeatures = size(Features(1).reduced_RGB_features,2);
     numClusters = length(GMM_Params);
     
     %% Initialization
-    SIFT_Fisher_Kernel = zeros(length(Training_features),2*dimFeatures*numClusters);
-    RGB_Fisher_Kernel  = zeros(length(Training_features),2*dimFeatures*numClusters);
-    Total_Fisher_Kernel = [SIFT_Fisher_Kernel;RGB_Fisher_Kernel];
+    SIFT_Fisher_Kernel = zeros(length(Features),2*dimFeatures*numClusters);
+    RGB_Fisher_Kernel  = zeros(length(Features),2*dimFeatures*numClusters);
     
     %% Gradient Vectors for the SIFT features
+   
     tic
-    for numImages = 1 : length(Training_features)
+    for numImages = 1 : length(Features)
 
-        fprintf("Now on SIFT Encoding in image: %d of %d \n", numImages, length(Training_features))
+        fprintf("Now on SIFT Encoding in image: %d of %d \n", numImages, length(Features))
     
         % Initialize the gradient vector
         gradient_vector = zeros(1, 2*dimFeatures*128);
@@ -33,7 +33,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features)
             Weights = gpuArray(GMM_Params(Cluster).Training_SIFT_weights);
     
             % Get the current feature matrix
-            currentFeatureMatrix = gpuArray(Training_features(numImages).reduced_SIFT_features);
+            currentFeatureMatrix = gpuArray(Features(numImages).reduced_SIFT_features);
     
             % Initialize the covariance matrices
             covMatrices = gpuArray(zeros(1, dimFeatures, Cluster));
@@ -84,10 +84,10 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features)
     
     %% Gradient Vectors for the RGB features
     tic
-    parfor numImages = 1 : length(Training_features)
+    for numImages = 1 : length(Features)
         
 
-        fprintf("Now on RGB Encoding on image: %d of %d \n", numImages, length(Training_features))
+        fprintf("Now on RGB Encoding on image: %d of %d \n", numImages, length(Features))
         % Initialize the gradient vector
         gradient_vector = zeros(1, 2*dimFeatures*128);
     
@@ -99,7 +99,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features)
             Weights = gpuArray(GMM_Params(Cluster).Training_RGB_weights);
     
             % Get the current feature matrix
-            currentFeatureMatrix = gpuArray(Training_features(numImages).reduced_RGB_features);
+            currentFeatureMatrix = gpuArray(Features(numImages).reduced_RGB_features);
     
             % Initialize the covariance matrices
             covMatrices = gpuArray(zeros(1, dimFeatures, Cluster));
@@ -115,8 +115,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features)
     
             % Create a gmdistribution object
             gmModel = gmdistribution(Means, covMatrices);
-    
-    
+
             ImagePosterior = posterior(gmModel,currentFeatureMatrix);
     
             % Compute F_k for the means
@@ -145,7 +144,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features)
     end
     
     RGB_encoding_time = toc;
-    fprintf("Finished encoding SIFT features. Time: %f \n",RGB_encoding_time);
+    fprintf("Finished encoding RGB features. Time: %f \n",RGB_encoding_time);
     
     Total_Fisher_Kernel = [SIFT_Fisher_Kernel;RGB_Fisher_Kernel];
 
