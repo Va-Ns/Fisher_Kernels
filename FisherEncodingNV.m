@@ -55,21 +55,23 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
     
             % Compute F_k for the means
             F_k_means = (currentFeatureMatrix - Means(Cluster, :)) ...
-                ./ sqrt(covMatrices(:, :, Cluster));
-            F_k_means = F_k_means .* ImagePosterior(:, Cluster) / ...
-                sqrt(Weights(Cluster));
+                ./ (Sigmas(Cluster, :).^2);
+            F_k_means = F_k_means .* ImagePosterior(:, Cluster) * ...
+                                                          Weights(Cluster);
             F_k_means = sum(F_k_means, 1) / size(currentFeatureMatrix, 1);
+
     
             % Compute F_k for the variances
-            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2 - 1) ...
-                ./ (2 * covMatrices(:, :, Cluster).^(3/2));
-            F_k_variances = F_k_variances .* ImagePosterior(:, Cluster)...
-                / sqrt(Weights(Cluster));
-            F_k_variances = sum(F_k_variances, 1) / size(currentFeatureMatrix, 1);
+            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2 ...
+                                            - 1)./ (Sigmas(Cluster, :).^3);
+            F_k_variances = 2 * F_k_variances .* ImagePosterior(:, Cluster)...
+                                                        * Weights(Cluster);
+            F_k_variances = sum(F_k_variances, 1) / ...
+                                            size(currentFeatureMatrix, 1);
     
             % Assign F_k_means and F_k_variances to gradient_vector
             gradient_vector(1, (Cluster-1)*2*dimFeatures+1: ...
-                Cluster*2*dimFeatures) = [F_k_means, F_k_variances];
+                       Cluster*2*dimFeatures) = [F_k_means, F_k_variances];
     
         end
     
@@ -118,23 +120,25 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
 
             ImagePosterior = posterior(gmModel,currentFeatureMatrix);
     
-            % Compute F_k for the means
-            F_k_means = (currentFeatureMatrix - Means(Cluster, :))...
-                ./ sqrt(covMatrices(:, :, Cluster));
-            F_k_means = F_k_means .* ImagePosterior(:, Cluster) / ...
-                sqrt(Weights(Cluster));
+             % Compute F_k for the means
+            F_k_means = (currentFeatureMatrix - Means(Cluster, :)) ...
+                ./ (Sigmas(Cluster, :).^2);
+            F_k_means = F_k_means .* ImagePosterior(:, Cluster) * ...
+                                                          Weights(Cluster);
             F_k_means = sum(F_k_means, 1) / size(currentFeatureMatrix, 1);
+
     
             % Compute F_k for the variances
-            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2 - 1)...
-                ./ (2 * covMatrices(:, :, Cluster).^(3/2));
-            F_k_variances = F_k_variances .* ImagePosterior(:, Cluster) /...
-                sqrt(Weights(Cluster));
-            F_k_variances = sum(F_k_variances, 1) / size(currentFeatureMatrix, 1);
+            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2 ...
+                                            - 1)./ (Sigmas(Cluster, :).^3);
+            F_k_variances = 2 * F_k_variances .* ImagePosterior(:, Cluster)...
+                                                        * Weights(Cluster);
+            F_k_variances = sum(F_k_variances, 1) / ...
+                                            size(currentFeatureMatrix, 1);
     
             % Assign F_k_means and F_k_variances to gradient_vector
             gradient_vector(1, (Cluster-1)*2*dimFeatures+1: ...
-                Cluster*2*dimFeatures) = [F_k_means, F_k_variances];
+                       Cluster*2*dimFeatures) = [F_k_means, F_k_variances];
     
         end
     

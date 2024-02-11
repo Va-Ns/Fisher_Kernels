@@ -140,8 +140,8 @@ GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
 
 %% Create the gradient vectors
 
-Total_Training_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features);
-Total_Testing_Fisher_Kernel  = gradientVectorsNV(GMM_Params,Testing_features);
+Total_Training_Fisher_Kernel = FisherEncodingNV(GMM_Params,Training_features);
+Total_Testing_Fisher_Kernel  = FisherEncodingNV(GMM_Params,Testing_features);
 
 %% It's classification time
 
