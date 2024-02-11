@@ -39,8 +39,10 @@ toc
 tic
 % FeatureMatrix.SIFT_Features_Matrix = vertcat(features(:).SIFT_Features);
 % FeatureMatrix.RGB_Features_Matrix = vertcat(features(:).RGBfeatures);
-Training_FeatureMatrix.Reduced_SIFT_Features_Matrix = vertcat(Training_features(:).reduced_SIFT_features);
-Training_FeatureMatrix.Reduced_RGB_Features_Matrix = vertcat(Training_features(:).reduced_RGB_features);
+Training_FeatureMatrix.Reduced_SIFT_Features_Matrix = ...
+                       vertcat(Training_features(:).reduced_SIFT_features);
+Training_FeatureMatrix.Reduced_RGB_Features_Matrix = ...
+                        vertcat(Training_features(:).reduced_RGB_features);
 preprocessing_time = toc
 
 %% Gaussian Mixture Model
@@ -139,15 +141,11 @@ GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
 %% Create the gradient vectors
 
 Total_Training_Fisher_Kernel = gradientVectorsNV(GMM_Params,Training_features);
-Total_Testing_Fisher_Kernel = gradientVectorsNV(GMM_Params,Testing_features);
+Total_Testing_Fisher_Kernel  = gradientVectorsNV(GMM_Params,Testing_features);
 
 %% It's classification time
 
-% First remove the indices that need to be removed
-Total_Training_Fisher_Kernel(removedTrainingIndices,:)=[];
-Total_Testing_Fisher_Kernel(removedTestingIndices,:)=[];
-
-% Remove also the corresponding indices from the labels 
+% Remove the corresponding indices from the labels 
 mask = true(1, numel(Trainds.Files));
 mask(removedTrainingIndices) = false;
 
@@ -158,7 +156,35 @@ mask(removedTestingIndices) = false;
 
 new_Testds = subset(Testds, mask);
 
+t = templateSVM('SaveSupportVectors',true,'Standardize',true,'Type', ...
+                    'classification');
+    [Model1,HyperparameterOptimizationResults] = fitcecoc(Total_Training_Fisher_Kernel, ...
+        [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
+        'OptimizeHyperparameters',{'BoxConstraint','KernelScale'}, ...
+        'HyperparameterOptimizationOptions',struct('Holdout',0.1,"UseParallel", ...
+        true));
 
+[predictedLabels, scores]= predict(Model1,Total_Testing_Fisher_Kernel);
+
+% Αξιολόγηση
+new_Testing_Labels = [new_Testds.Labels;new_Testds.Labels];
+new_Testing_Labels(removedTestingIndices,:) = [];
+confusionMatrix = confusionmat(new_Testing_Labels,predictedLabels);
+
+% Υπολογισμός ακρίβειας
+accuracy = sum(diag(confusionMatrix)) / sum(confusionMatrix(:));
+
+% Υπολογισμός Ακρίβειας, Recall και F1-score για την κάθε κλάση
+numClasses = size(confusionMatrix, 1);
+precision = zeros(numClasses, 1);
+recall = zeros(numClasses, 1);
+f1Score = zeros(numClasses, 1);
+for j = 1:numClasses
+    precision(j) = confusionMatrix(j,j) / sum(confusionMatrix(:,j));
+    recall(j) = confusionMatrix(j,j) / sum(confusionMatrix(j,:));
+    f1Score(j) = 2 * (precision(j) * recall(j)) / (precision(j) + ...
+                                                                recall(j));
+end
 
 %% Calculate AIC and BIC
 

@@ -5,7 +5,7 @@ rng(1)
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
 disp("Maximum number of workers: " + maxWorkers);
-pool=parpool(maxWorkers/2);
+pool=parpool(maxWorkers/4);
 %% Load the YOLOv4 Object Detector
 yolo = yolov4ObjectDetector("csp-darknet53-coco");
 
@@ -158,10 +158,33 @@ new_Testds = subset(Testds, mask);
 
 t = templateSVM('SaveSupportVectors',true,'Standardize',true,'Type', ...
                     'classification');
-    [Model1,HyperparameterOptimizationResults] = fitcecoc(gpuArray(Total_Training_Fisher_Kernel), ...
-        [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
-        'OptimizeHyperparameters',{'BoxConstraint','KernelScale'}, ...
-        'HyperparameterOptimizationOptions',struct('KFold',10));
+[Model1,HyperparameterOptimizationResults] = fitcecoc(Total_Training_Fisher_Kernel, ...
+    [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
+    'OptimizeHyperparameters',{'BoxConstraint','KernelScale'}, ...
+    'HyperparameterOptimizationOptions',struct('Holdout',0.1,"UseParallel", ...
+    true));
+
+[predictedLabels, scores]= predict(Model1,Total_Testing_Fisher_Kernel);
+
+% Αξιολόγηση
+new_Testing_Labels = [new_Testds.Labels;new_Testds.Labels];
+new_Testing_Labels(removedTestingIndices,:) = [];
+confusionMatrix = confusionmat(new_Testing_Labels,predictedLabels);
+
+% Υπολογισμός ακρίβειας
+accuracy = sum(diag(confusionMatrix)) / sum(confusionMatrix(:));
+
+% Υπολογισμός Ακρίβειας, Recall και F1-score για την κάθε κλάση
+numClasses = size(confusionMatrix, 1);
+precision = zeros(numClasses, 1);
+recall = zeros(numClasses, 1);
+f1Score = zeros(numClasses, 1);
+for j = 1:numClasses
+    precision(j) = confusionMatrix(j,j) / sum(confusionMatrix(:,j));
+    recall(j) = confusionMatrix(j,j) / sum(confusionMatrix(j,:));
+    f1Score(j) = 2 * (precision(j) * recall(j)) / (precision(j) + ...
+                                                                recall(j));
+end
 
 %% Calculate AIC and BIC
 
