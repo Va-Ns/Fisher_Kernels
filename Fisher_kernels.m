@@ -1,7 +1,6 @@
 clear;clc;close all
 rng(1)
 %%
-
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
 disp("Maximum number of workers: " + maxWorkers);
@@ -139,8 +138,9 @@ GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
 % Y = random(gmModel, size(SIFT_data,1));
 
 %% Create the gradient vectors
-
+fprintf("Encoding the Training Features\n")
 Total_Training_Fisher_Kernel = FisherEncodingNV(GMM_Params,Training_features);
+fprintf("Encoding the Training Features\n")
 Total_Testing_Fisher_Kernel  = FisherEncodingNV(GMM_Params,Testing_features);
 
 %% It's classification time
@@ -156,20 +156,19 @@ mask(removedTestingIndices) = false;
 
 new_Testds = subset(Testds, mask);
 
-t = templateSVM('SaveSupportVectors',true,'Standardize',true,'Type', ...
-                    'classification');
+t = templateSVM('SaveSupportVectors',true,'Type','classification');
 [Model1,HyperparameterOptimizationResults] = fitcecoc(Total_Training_Fisher_Kernel, ...
     [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
     'OptimizeHyperparameters',{'BoxConstraint','KernelScale'}, ...
-    'HyperparameterOptimizationOptions',struct('Holdout',0.1,"UseParallel", ...
-    true));
+    'HyperparameterOptimizationOptions',struct('Holdout',0.1,"UseParallel",true));
 
-[predictedLabels, scores]= predict(Model1,Total_Testing_Fisher_Kernel);
+Mdl = Model1.Trained{1};
+[predictedLabels, scores]= predict(Mdl,Total_Testing_Fisher_Kernel);
 
 % Αξιολόγηση
-new_Testing_Labels = [new_Testds.Labels;new_Testds.Labels];
-new_Testing_Labels(removedTestingIndices,:) = [];
-confusionMatrix = confusionmat(new_Testing_Labels,predictedLabels);
+% new_Testing_Labels = [new_Testds.Labels;new_Testds.Labels];
+% new_Testing_Labels(removedTestingIndices,:) = [];
+confusionMatrix = confusionmat([new_Testds.Labels;new_Testds.Labels],predictedLabels);
 
 % Υπολογισμός ακρίβειας
 accuracy = sum(diag(confusionMatrix)) / sum(confusionMatrix(:));

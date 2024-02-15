@@ -23,7 +23,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
         fprintf("Now on SIFT Encoding in image: %d of %d \n", numImages, length(Features))
     
         % Initialize the gradient vector
-        gradient_vector = zeros(1, 2*dimFeatures*numClusters);
+        gradient_vector = [] %zeros(1, 2*dimFeatures*128);
     
         for Cluster = 1 : numClusters
     
@@ -49,6 +49,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
     
             % Create a gmdistribution object
             gmModel = gmdistribution(Means, covMatrices);
+    
     
             ImagePosterior = posterior(gmModel,currentFeatureMatrix);
     
@@ -102,7 +103,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
 
         fprintf("Now on RGB Encoding on image: %d of %d \n", numImages, length(Features))
         % Initialize the gradient vector
-        gradient_vector = zeros(1, 2*dimFeatures*numClusters);
+        gradient_vector = zeros(1, 2*dimFeatures*128);
     
         for Cluster = 1 : numClusters
     
@@ -131,37 +132,25 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
 
             ImagePosterior = posterior(gmModel,currentFeatureMatrix);
     
-            % Compute F_k for the means
+             % Compute F_k for the means
             F_k_means = (currentFeatureMatrix - Means(Cluster, :)) ...
                 ./ (Sigmas(Cluster, :).^2);
+            F_k_means = F_k_means .* ImagePosterior(:, Cluster) * ...
+                                                          Weights(Cluster);
+            F_k_means = sum(F_k_means, 1) / size(currentFeatureMatrix, 1);
 
-            F_k_means = sum(F_k_means .* ImagePosterior(:, Cluster) * ...
-                                                          Weights(Cluster),1);
-
-            f_mui = (size(currentFeatureMatrix,1) * Weights(Cluster)) ./ ...
-                                                    Sigmas(Cluster, :).^2;
-            
-            % Compute the normalized gradient of the mean parameter
-            F_k_means_normalized = F_k_means ./ f_mui;
-
+    
             % Compute F_k for the variances
-            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2)...
-                                                 ./ (Sigmas(Cluster, :).^3)...
-                                               - 1 ./ (Sigmas(Cluster, :));
-
-            F_k_variances = sum(F_k_variances .* ImagePosterior(:, Cluster)...
-                                                        * Weights(Cluster),1);
-
-            f_si = 2 * size(currentFeatureMatrix,1) * Weights(Cluster) ./...
-                                                     Sigmas(Cluster, :).^2;
-            
-            % Compute the normalized gradient of the mean parameter
-            F_k_variances_normalized = F_k_variances ./ f_si;
+            F_k_variances = ((currentFeatureMatrix - Means(Cluster, :)).^2 ...
+                                            - 1)./ (Sigmas(Cluster, :).^3);
+            F_k_variances = 2 * F_k_variances .* ImagePosterior(:, Cluster)...
+                                                        * Weights(Cluster);
+            F_k_variances = sum(F_k_variances, 1) / ...
+                                            size(currentFeatureMatrix, 1);
     
             % Assign F_k_means and F_k_variances to gradient_vector
             gradient_vector(1, (Cluster-1)*2*dimFeatures+1: ...
-                       Cluster*2*dimFeatures) = [F_k_means_normalized,...
-                                                 F_k_variances_normalized];
+                       Cluster*2*dimFeatures) = [F_k_means, F_k_variances];
     
         end
     
