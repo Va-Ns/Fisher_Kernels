@@ -1,12 +1,11 @@
-function varargout = splitTheDatastore(datastore,newlabels, ...
-                                       optional)
+function varargout = splitTheDatastore(datastore,newlabels, optional)
 
 %% Description
 %  ------------------------------------------------------------------------
 %  A function that splits the datastore into training and testing 
 %  datastores based on user's input that decides whether the data should be 
 %  processed to have equal number of labels or not. The optional variable 
-%  opt gives the user the choise to either return the training and testing 
+%  opt gives the user the choice to either return the training and testing 
 %  label tables with the count of the former or not.
 
 
@@ -29,9 +28,7 @@ function varargout = splitTheDatastore(datastore,newlabels, ...
 %                   labels and the count of them for the user to process.
 arguments (Input)
 
-    datastore          {mustBeUnderlyingType(datastore, ...
-                                             ['matlab.io.datastore.' ...
-                                             'ImageDatastore'])} 
+    datastore          {mustBeUnderlyingType(datastore,'matlab.io.datastore.ImageDatastore')} 
 
     newlabels          {mustBeNonempty} 
 
@@ -43,14 +40,12 @@ end
 
 %% Message for the user and setting the option of label data management.
 
-msg = ['Write "Equal" if you want the number of label of the data in ' ...
-       'the datastore to be equal in number, or "Proceed" if you want to ' ...
-       'continue with the process'];
+msg = ['Write "Equal" if you want the number of label of the data in the datastore to be equal in ' ...
+       'number, or "Proceed" if you want to continue with the process'];
 uiwait(msgbox(msg,'Message'))
 
-% Creation of an input dialog window that takes users input and sets the
-% option variable that handles the method of creating equal number of label
-% in the data, or proceeds with the 
+% Creation of an input dialog window that takes users input and sets the option variable that 
+% handles the method of creating equal number of label in the data, or proceeds with the 
 prompt = {'Enter option'};
 dlgtitle = 'Option';
 fieldsize = [1 45];

@@ -83,7 +83,7 @@ ylabel("Negative Log-Likelihood")
 
 % Για τα SIFT δεδομένα
 
-% Calculate the index for one third of the data
+% Calculate the index for one fourth of the data
 oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
 
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
@@ -163,12 +163,12 @@ t = templateSVM('SaveSupportVectors',true,'Type','classification');
     'HyperparameterOptimizationOptions',struct('Holdout',0.1,"UseParallel",true));
 
 Mdl = Model1.Trained{1};
-[predictedLabels, scores]= predict(Mdl,Total_Testing_Fisher_Kernel);
+[predictedLabels, scores]= predict(Model1,Total_Testing_Fisher_Kernel);
 
 % Αξιολόγηση
 % new_Testing_Labels = [new_Testds.Labels;new_Testds.Labels];
 % new_Testing_Labels(removedTestingIndices,:) = [];
-confusionMatrix = confusionmat([new_Testds.Labels;new_Testds.Labels],predictedLabels);
+confusionMatrix = confusionmat(new_Testing_Labels,predictedLabels);
 
 % Υπολογισμός ακρίβειας
 accuracy = sum(diag(confusionMatrix)) / sum(confusionMatrix(:));

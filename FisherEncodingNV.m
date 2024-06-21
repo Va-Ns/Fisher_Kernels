@@ -4,7 +4,7 @@ function Total_Fisher_Kernel = gradientVectorsNV(GMM_Params,Features)
     
         GMM_Params          {mustBeUnderlyingType(GMM_Params,'struct')}
     
-        Features   {mustBeUnderlyingType(Features,'struct')}
+        Features            {mustBeUnderlyingType(Features,'struct')}
     
     end
 
