@@ -1,5 +1,5 @@
 clear;clc;close all
-rng(1)
+s = rng(1)
 %%
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
@@ -30,7 +30,7 @@ tic
 [Testing_features,removedTestingIndices]= extractImageFeatures(Testds);
 toc
 
-%% Create a struct that contains the vertically concatenated features 
+%% Create a struct that contains the vertically concatenated training features 
 
 % Concatenate each feature category into a single matrix and put it into a
 % structure
@@ -46,20 +46,14 @@ preprocessing_time = toc
 
 %% Gaussian Mixture Model
 
-%step = 10;
 numModels = 128;
 logLikelihoods_SIFT = zeros(1, numModels);
 Log_Likelihoods_SIFT = cell(1, numModels);
 logLikelihoods_RGB = zeros(1, numModels);
 Log_Likelihoods_RGB = cell(1, numModels);
 
-AICs = zeros(1, numModels);
-BICs = zeros(1, numModels);
-
-Responsibilities_SIFT = cell(1, numModels);
-Responsibilities_RGB = cell(1, numModels);
-
 % Για τα RGB δεδομένα
+Training_RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
 tic
 for i = 1 : numModels
 
@@ -89,6 +83,8 @@ oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix,
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
+clear Training_FeatureMatrix
+
 tic
 for i = 1 : numModels
 
@@ -109,15 +105,15 @@ grid on
 title("Negative Log-Likelihood over Number of Clusters for SIFT features")
 xlabel("Number of Clusters")
 ylabel("Negative Log-Likelihood")
+
+clear logLikelihoods_RGB logLikelihoods_SIFT
 %% Calculate the statistics for the SIFT and RGB features
 
-Training_RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
-RGB_data = gpuArray(Training_FeatureMatrix.Reduced_RGB_Features_Matrix);
 
 GMM_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data, ...
                                Log_Likelihoods_SIFT,Log_Likelihoods_RGB);
 
-
+clear Training_SIFT_data Training_RGB_data Log_Likelihoods_SIFT Log_Likelihoods_RGB
 %% Data Generation
 % 
 % % Get the number of clusters and features
@@ -143,6 +139,8 @@ Total_Training_Fisher_Kernel = FisherEncodingNV(GMM_Params,Training_features);
 fprintf("Encoding the Training Features\n")
 Total_Testing_Fisher_Kernel  = FisherEncodingNV(GMM_Params,Testing_features);
 
+clear Training_features Testing_features GMM_Params
+
 %% It's classification time
 
 % Remove the corresponding indices from the labels 
@@ -159,8 +157,8 @@ new_Testds = subset(Testds, mask);
 t = templateSVM('SaveSupportVectors',true,'Type','classification');
 [Model1,HyperparameterOptimizationResults] = fitcecoc(Total_Training_Fisher_Kernel, ...
     [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
-    'OptimizeHyperparameters',{'BoxConstraint','KernelScale'}, ...
-    'HyperparameterOptimizationOptions',struct('Holdout',0.1,"UseParallel",true));
+    'OptimizeHyperparameters','all', 'HyperparameterOptimizationOptions', ...
+    struct('Holdout',0.1,"UseParallel",true));
 
 Mdl = Model1.Trained{1};
 [predictedLabels, scores]= predict(Model1,Total_Testing_Fisher_Kernel);
