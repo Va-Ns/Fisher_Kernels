@@ -5,7 +5,7 @@ s = rng(1);
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
 disp("Maximum number of workers: " + maxWorkers);
-pool=parpool(maxWorkers/4);
+pool=parpool(maxWorkers/2);
 
 %% Load the data 
 filelocation = uigetdir;
@@ -36,8 +36,6 @@ Training_FeatureMatrix.Reduced_RGB_Features_Matrix = ...
                         vertcat(Training_features(:).reduced_RGB_features);
 preprocessing_time = toc;
 
-clear Training_FeatureMatrix 
-
 %% Initializations
 
 numModels = 128;
@@ -64,6 +62,7 @@ oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix,
 
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
+clear Training_FeatureMatrix 
 %% fitgmdist Gaussian Mixture Model
 
 % Για τα RGB δεδομένα
@@ -286,6 +285,7 @@ accuracies = [accuracy1, accuracy2, accuracy3];
 accuraciesTable = array2table(accuracies, 'VariableNames', {'fitgmdist', 'GMM', 'sEM'});
 
 %% Plotting the progression of the negative log likelihood per iteration per algorithm
+
 % Plot for RGB Data
 figure;
 hold on;
@@ -297,6 +297,8 @@ xlabel('Number of Clusters');
 ylabel('Negative Log Likelihood');
 title('Negative Log Likelihood for RGB Data Across Algorithms');
 hold off;
+% Save the figure
+savefig('Workspace/NLL_RGB.fig');
 
 % Plot for SIFT Data
 figure;
@@ -309,9 +311,10 @@ xlabel('Number of Clusters');
 ylabel('Negative Log Likelihood');
 title('Negative Log Likelihood for SIFT Data Across Algorithms');
 hold off;
+% Save the figure
+savefig('Workspace/NLL_SIFT.fig');
 
-% Display the tables
-disp('Times Table:');
-disp(timesTable);
-disp('Accuracies Table:');
-disp(accuraciesTable);
+% Assuming timesTable and accuraciesTable are already defined as MATLAB tables
+% Save the tables
+writetable(timesTable, 'Workspace/timesTable.csv');
+writetable(accuraciesTable, 'Workspace/accuraciesTable.csv');
