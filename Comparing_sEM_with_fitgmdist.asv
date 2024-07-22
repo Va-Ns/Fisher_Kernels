@@ -13,6 +13,6 @@ fprintf('\n sEM execution time: %f seconds\n', time_sEM);
 
 % Step 3: Run fitgmdist
 tic;
-GMModel = fitgmdist(data, numClusters, 'Options', statset('MaxIter',100));
+GMModel = GMM(data, numClusters, 'Options', statset('MaxIter',100));
 time_fitgmdist = toc;
 fprintf('fitgmdist execution time: %f seconds\n', time_fitgmdist);

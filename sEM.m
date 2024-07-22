@@ -111,13 +111,21 @@ function GMM = sEM(data,numClusters,Options)
                                                 + (eta_k * s_i));
             k = k + 1;
         end
+
+        % M-step updates
+        sumResponsibilities = sum(Responsibilities, 1);
+        mus = (Responsibilities' * data) ./ sumResponsibilities';
+        for j = 1:numClusters
+            diff = data - mus(j, :);
+            Sigmas(j, :) = (Responsibilities(:, j)' * (diff .^ 2)) / sumResponsibilities(j) + 1e-6;
+        end
+        weights = sumResponsibilities / numPoints;
         
         % Calculate log-likelihood after updating all batches
         Density = sum(Responsibilities, 2);
         Logpdf = log(Density) + MaxLogLikelihood;
         LogLikelihood = sum(Logpdf) / numBatches;
         
-
         % Calculate the sum of responsibilities for each cluster
         % sumResponsibilities = sum(Responsibilities, 1);
         %
@@ -159,6 +167,7 @@ function GMM = sEM(data,numClusters,Options)
     end
 
     function one_hot = one_hot_encoding(Responsibilities)
+
         % Get the number of classes
         numClasses = size(Responsibilities, 2);
     
@@ -170,6 +179,7 @@ function GMM = sEM(data,numClusters,Options)
         
         % Set the corresponding class to 1 using linear indexing
         one_hot(sub2ind(size(one_hot), (1:size(Responsibilities, 1))', maxClass)) = 1;
+        
     end
 
 end

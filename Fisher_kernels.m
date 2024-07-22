@@ -1,5 +1,5 @@
 clear;clc;close all
-s = rng(1)
+s = rng(1);
 %%
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;

@@ -1,6 +1,6 @@
 clear;clc
 % Step 1: Generate Data
-data = randn(1000000, 128);
+data = randn(1000000, 2);
 
 % Number of clusters
 numClusters = 100;
@@ -13,6 +13,9 @@ fprintf('\n sEM execution time: %f seconds\n', time_sEM);
 
 % Step 3: Run fitgmdist
 tic;
-GMModel = fitgmdist(data, numClusters, 'Options', statset('MaxIter',100));
-time_fitgmdist = toc;
-fprintf('fitgmdist execution time: %f seconds\n', time_fitgmdist);
+GMModel = GMM_NV(data, numClusters,"MaxIterations",100);
+time_GMM = toc;
+fprintf('GMM execution time: %f seconds\n', time_GMM);
+
+%%
+
