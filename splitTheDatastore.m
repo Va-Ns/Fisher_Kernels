@@ -89,7 +89,7 @@ if numel(nargin) < 4
 
         case "Proceed"
 
-            imshow(imread("34yhxs.jpg")); pause(1); close all
+            % imshow(imread("34yhxs.jpg")); pause(1); close all
 
             % fprintf('So you have chosen...biases\n')
             [Trainds,Testds] = splitEachLabel(datastore,0.7,'randomized');

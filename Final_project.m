@@ -1,6 +1,8 @@
 clear;clc;close all
 s = rng(1);
 
+mkdir Workspace
+
 %%
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
@@ -40,7 +42,7 @@ preprocessing_time = toc;
 
 numModels = 128;
 
-fitGMMlogLikelihoods_SIFT = zeros(1, numModels);
+fitGMMNeglogLikelihoods_SIFT = zeros(1, numModels);
 fitGMMLog_Likelihoods_SIFT = cell(1, numModels);
 fitGMMNeglogLikelihoods_RGB = zeros(1, numModels);
 fitGMMLog_Likelihoods_RGB = cell(1, numModels);
@@ -67,14 +69,17 @@ clear Training_FeatureMatrix
 
 % Για τα RGB δεδομένα
 opts = statset('Display','final','MaxIter',1500);
-
+regularizationValue = 1e-5; % Insert a regularization value to avoid ill-conditioned covariance.
+                            % This can happen when the covariance matrices during the fitting of a 
+                            % Gaussian Mixture Model (GMM) become nearly singular or not positive 
+                            % definite. 
 tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    fitGMMs = fitgmdist(gather(Training_RGB_data),i,"CovarianceType","diagonal","Replicates",1, ...
-                                                                                    "Options",opts);
+    fitGMMs = fitgmdist(gather(Training_RGB_data),i,"Replicates",1,"Options",opts, ...
+        "CovarianceType","diagonal","RegularizationValue",regularizationValue);
     fitGMMNeglogLikelihoods_RGB(i) = fitGMMs.NegativeLogLikelihood;
 
     fitGMMLog_Likelihoods_RGB{i} = -fitGMMs.NegativeLogLikelihood;
@@ -91,9 +96,9 @@ for i = 1 : numModels
 
     fitGMMs = fitgmdist(gather(Training_SIFT_data),i,"CovarianceType","diagonal","Replicates",1, ...
                                                                                     "Options",opts); 
-    fitGMMNeglogLikelihoods_RGB(i) = fitGMMs.NegativeLogLikelihood;
+    fitGMMNeglogLikelihoods_SIFT(i) = fitGMMs.NegativeLogLikelihood;
 
-    fitGMMLog_Likelihoods_SIFT{i} = -fitGMMs.Log_Likelihood;
+    fitGMMLog_Likelihoods_SIFT{i} = -fitGMMs.NegativeLogLikelihood;
    
 end
 fitGMM_SIFT_time = toc;
@@ -110,8 +115,8 @@ for i = 1 : numModels
 
     GMMs = GMM_NV(Training_RGB_data,i,"NumReplicates",1,"MaxIterations",1500);
 
-    GMMNeglogLikelihoods_RGB(i) = -GMMs.bestLogLikelihood;
-    GMMLog_Likelihoods_RGB{i} = GMMs.bestLogLikelihood; 
+    GMMNeglogLikelihoods_RGB(i) = -GMMs.logLikelihood;
+    GMMLog_Likelihoods_RGB{i} = GMMs.logLikelihood; 
     
 end
 GMM_RGB_time = toc;
@@ -125,8 +130,8 @@ for i = 1 : numModels
 
     GMMs = GMM_NV(Training_SIFT_data,i,"NumReplicates",1,"MaxIterations",1500); 
 
-    GMMNeglogLikelihoods_SIFT(i) = -GMMs.bestLogLikelihood;
-    GMMLog_Likelihoods_SIFT{i} = GMMs.bestLogLikelihood;  
+    GMMNeglogLikelihoods_SIFT(i) = -GMMs.logLikelihood;
+    GMMLog_Likelihoods_SIFT{i} = GMMs.logLikelihood;  
     
 end
 GMM_SIFT_time = toc;
@@ -141,8 +146,8 @@ for i = 1 : numModels
 
     sEM_GMMs = sEM(Training_RGB_data, i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     
-    sEMNeglogLikelihoods_RGB(i) = sEM_GMMs.Log_Likelihood;
-    sEMLog_Likelihoods_RGB{i} = -sEM_GMMs.Log_Likelihood;
+    sEMNeglogLikelihoods_RGB(i) = sEM_GMMs.NegLogLikelihood;
+    sEMLog_Likelihoods_RGB{i} = -sEM_GMMs.NegLogLikelihood;
    
     
 end

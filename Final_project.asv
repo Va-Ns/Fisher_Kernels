@@ -1,11 +1,13 @@
 clear;clc;close all
 s = rng(1);
 
+mkdir Workspace
+
 %%
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
 disp("Maximum number of workers: " + maxWorkers);
-pool=parpool(maxWorkers/4);
+pool=parpool(maxWorkers/2);
 
 %% Load the data 
 filelocation = uigetdir;
@@ -36,13 +38,11 @@ Training_FeatureMatrix.Reduced_RGB_Features_Matrix = ...
                         vertcat(Training_features(:).reduced_RGB_features);
 preprocessing_time = toc;
 
-clear Training_FeatureMatrix 
-
 %% Initializations
 
 numModels = 128;
 
-fitGMMlogLikelihoods_SIFT = zeros(1, numModels);
+fitGMMNeglogLikelihoods_SIFT = zeros(1, numModels);
 fitGMMLog_Likelihoods_SIFT = cell(1, numModels);
 fitGMMNeglogLikelihoods_RGB = zeros(1, numModels);
 fitGMMLog_Likelihoods_RGB = cell(1, numModels);
@@ -64,18 +64,22 @@ oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix,
 
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
+clear Training_FeatureMatrix 
 %% fitgmdist Gaussian Mixture Model
 
 % Για τα RGB δεδομένα
 opts = statset('Display','final','MaxIter',1500);
-
+regularizationValue = 1e-5; % Insert a regularization value to avoid ill-conditioned covariance.
+                            % This can happen when the covariance matrices during the fitting of a 
+                            % Gaussian Mixture Model (GMM) become nearly singular or not positive 
+                            % definite. 
 tic
 for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    fitGMMs = fitgmdist(gather(Training_RGB_data),i,"CovarianceType","diagonal","Replicates",1, ...
-                                                                                    "Options",opts);
+    fitGMMs = fitgmdist(gather(Training_RGB_data),i,"Replicates",1,"Options",opts, ...
+        "CovarianceType","diagonal","RegularizationValue",regularizationValue);
     fitGMMNeglogLikelihoods_RGB(i) = fitGMMs.NegativeLogLikelihood;
 
     fitGMMLog_Likelihoods_RGB{i} = -fitGMMs.NegativeLogLikelihood;
@@ -92,9 +96,9 @@ for i = 1 : numModels
 
     fitGMMs = fitgmdist(gather(Training_SIFT_data),i,"CovarianceType","diagonal","Replicates",1, ...
                                                                                     "Options",opts); 
-    fitGMMNeglogLikelihoods_RGB(i) = fitGMMs.NegativeLogLikelihood;
+    fitGMMNeglogLikelihoods_SIFT(i) = fitGMMs.NegativeLogLikelihood;
 
-    fitGMMLog_Likelihoods_SIFT{i} = -fitGMMs.Log_Likelihood;
+    fitGMMLog_Likelihoods_SIFT{i} = -fitGMMs.NegativeLogLikelihood;
    
 end
 fitGMM_SIFT_time = toc;
@@ -286,6 +290,7 @@ accuracies = [accuracy1, accuracy2, accuracy3];
 accuraciesTable = array2table(accuracies, 'VariableNames', {'fitgmdist', 'GMM', 'sEM'});
 
 %% Plotting the progression of the negative log likelihood per iteration per algorithm
+
 % Plot for RGB Data
 figure;
 hold on;
@@ -297,21 +302,24 @@ xlabel('Number of Clusters');
 ylabel('Negative Log Likelihood');
 title('Negative Log Likelihood for RGB Data Across Algorithms');
 hold off;
+% Save the figure
+savefig('Workspace/NLL_RGB.fig');
 
 % Plot for SIFT Data
 figure;
 hold on;
 plot(fitGMMNeglogLikelihoods_SIFT, 'r-', 'DisplayName', 'fitgmdist SIFT');
 plot(GMMNeglogLikelihoods_SIFT, 'g-', 'DisplayName', 'GMM SIFT');
-plot(sEMNeglogLikelihoods_RGB, 'b-', 'DisplayName', 'sEM SIFT');
+plot(sEMNeglogLikelihoods_SIFT, 'b-', 'DisplayName', 'sEM SIFT');
 legend('show');
 xlabel('Number of Clusters');
 ylabel('Negative Log Likelihood');
 title('Negative Log Likelihood for SIFT Data Across Algorithms');
 hold off;
+% Save the figure
+savefig('Workspace/NLL_SIFT.fig');
 
-% Display the tables
-disp('Times Table:');
-disp(timesTable);
-disp('Accuracies Table:');
-disp(accuraciesTable);
+% Assuming timesTable and accuraciesTable are already defined as MATLAB tables
+% Save the tables
+writetable(timesTable, 'Workspace/timesTable.csv');
+writetable(accuraciesTable, 'Workspace/accuraciesTable.csv');
