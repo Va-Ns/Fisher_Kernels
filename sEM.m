@@ -151,13 +151,9 @@ function GMM = sEM(data,numClusters,Options)
 
                 % Update best log likelihood
                 bestLogLikelihood = LogLikelihood;
-                
-                %% Place the best found statistics in the struct
-                NegLogLikelihood = -bestLogLikelihood;
-
+            
                 % Update the struct with the new results
-                GMM.NegLogLikelihood = NegLogLikelihood;
-                GMM.Log_Likelihood = tall(gather(Log_Likelihood));
+                GMM.NegLogLikelihood = -bestLogLikelihood;
               
             break;
         end
