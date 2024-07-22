@@ -59,7 +59,8 @@ for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(Training_FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5,"BatchSize",100); 
+    GMMs = sEM(Training_FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5,"BatchSize",100, ...
+        "MaxIterations",1500); 
     logLikelihoods_RGB(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_RGB{i} = GMMs.Log_Likelihood;
 
@@ -81,7 +82,6 @@ ylabel("Negative Log-Likelihood")
 oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
 
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
-SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
 clear Training_FeatureMatrix
 
@@ -90,7 +90,7 @@ for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5); 
+    GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     logLikelihoods_SIFT(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_SIFT{i} = GMMs.Log_Likelihood;
 

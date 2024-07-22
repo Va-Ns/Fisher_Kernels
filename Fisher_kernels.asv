@@ -1,5 +1,5 @@
 clear;clc;close all
-s = rng(1)
+s = rng(1);
 %%
 delete(gcp('nocreate'))
 maxWorkers = maxNumCompThreads;
@@ -46,7 +46,7 @@ preprocessing_time = toc
 
 %% Gaussian Mixture Model
 
-numModels = 128;
+numModels = 10;
 logLikelihoods_SIFT = zeros(1, numModels);
 Log_Likelihoods_SIFT = cell(1, numModels);
 logLikelihoods_RGB = zeros(1, numModels);
@@ -59,7 +59,8 @@ for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(Training_FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5,"BatchSize",100); 
+    GMMs = sEM(Training_FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5,"BatchSize",100, ...
+        "MaxIterations",1500); 
     logLikelihoods_RGB(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_RGB{i} = GMMs.Log_Likelihood;
 
@@ -77,11 +78,10 @@ ylabel("Negative Log-Likelihood")
 
 % Για τα SIFT δεδομένα
 
-% Calculate the index for one third of the data
+% Calculate the index for one fourth of the data
 oneFourthIndex = floor(size(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix, 1) / 4);
 
 Training_SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
-SIFT_data = gpuArray(Training_FeatureMatrix.Reduced_SIFT_Features_Matrix(1:oneFourthIndex,:));
 
 clear Training_FeatureMatrix
 
@@ -90,7 +90,7 @@ for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5); 
+    GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     logLikelihoods_SIFT(i) = GMMs.NegLogLikelihood;
     Log_Likelihoods_SIFT{i} = GMMs.Log_Likelihood;
 
@@ -161,12 +161,12 @@ t = templateSVM('SaveSupportVectors',true,'Type','classification');
     struct('Holdout',0.1,"UseParallel",true));
 
 Mdl = Model1.Trained{1};
-[predictedLabels, scores]= predict(Mdl,Total_Testing_Fisher_Kernel);
+[predictedLabels, scores]= predict(Model1,Total_Testing_Fisher_Kernel);
 
 % Αξιολόγηση
 % new_Testing_Labels = [new_Testds.Labels;new_Testds.Labels];
 % new_Testing_Labels(removedTestingIndices,:) = [];
-confusionMatrix = confusionmat([new_Testds.Labels;new_Testds.Labels],predictedLabels);
+confusionMatrix = confusionmat(new_Testing_Labels,predictedLabels);
 
 % Υπολογισμός ακρίβειας
 accuracy = sum(diag(confusionMatrix)) / sum(confusionMatrix(:));

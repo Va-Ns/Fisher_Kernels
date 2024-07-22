@@ -72,21 +72,24 @@ if numel(nargin) < 4
             % labels.
 
             datastore = splitEachLabel(datastore,minNum);
-            [Trainds,Testds] = splitEachLabel(datastore,minNum,'randomized');
+            [Trainds,Testds] = splitEachLabel(datastore,0.7,'randomized');
     
             trainlabelcount_minclass=countEachLabel(Trainds);
             testlabelcount_minclass=countEachLabel(Testds);
             
             if optional.flag
-                varargout = {Trainds,Testds,trainlabelcount_minclass,...
-                    testlabelcount_minclass};
+
+                varargout = {Trainds,Testds,trainlabelcount_minclass, testlabelcount_minclass};
+
             else
+
                 varargout = {Trainds,Testds};
+
             end
 
         case "Proceed"
 
-            % imshow(imread("34yhxs.jpg")); pause(1); close all
+            imshow(imread("34yhxs.jpg")); pause(1); close all
 
             % fprintf('So you have chosen...biases\n')
             [Trainds,Testds] = splitEachLabel(datastore,0.7,'randomized');

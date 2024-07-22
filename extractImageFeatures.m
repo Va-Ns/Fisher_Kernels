@@ -177,24 +177,24 @@ while hasdata(resized_imds)
     for r = 1:gridRows
 
         for c = 1:gridCols
-            
+
             % Extract the region
-            region = I((r-1)*regionHeight+1:r*regionHeight, ...
-                                    (c-1)*regionWidth+1:c*regionWidth, :);
-
+            region = I((r-1)*regionHeight+1:r*regionHeight, (c-1)*regionWidth+1:c*regionWidth);
+    
             % Calculate statistics for the region
-            regionStats = [mean(region, [1,2]), ...
-                           std(region, 1, [1,2]), ...
-                           skewness(region, 1, [1,2]), ...
-                           kurtosis(region, 1, [1,2])];
-
-            regionStats= reshape(regionStats,[1 12]);
-
+            meanVal = mean(region, 'all');
+            stdVal = std(double(region), 0, 'all');
+            skewVal = skewness(double(region(:)));
+            kurtVal = kurtosis(double(region(:)));
+    
+            % Replicate the statistics three times to mimic RGB statistics
+            regionStats = repmat([meanVal, stdVal, skewVal, kurtVal], 1, 3);
+    
             regionStats_reshaped(regionIndex,:) = regionStats;
-
+    
             % Increment the region index
             regionIndex = regionIndex + 1;
-
+            
         end
 
     end
