@@ -16,6 +16,3 @@ tic;
 GMModel = GMM_NV(data, numClusters,"MaxIterations",100);
 time_GMM = toc;
 fprintf('GMM execution time: %f seconds\n', time_GMM);
-
-%%
-
