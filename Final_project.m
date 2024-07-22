@@ -160,10 +160,10 @@ for i = 1 : numModels
 
     fprintf("Number of cluster:%d \n",i)
 
-    GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
+    sEM_GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     
-    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs.Log_Likelihood;
-    sEMLog_Likelihoods_SIFT{i} = -GMMs.Log_Likelihood;  
+    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs.NegLogLikelihood;
+    sEMLog_Likelihoods_SIFT{i} = -sEM_GMMs.NegLogLikelihood;  
     
 end
 sEM_SIFT_time = toc;

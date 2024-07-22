@@ -115,8 +115,8 @@ for i = 1 : numModels
 
     GMMs = GMM_NV(Training_RGB_data,i,"NumReplicates",1,"MaxIterations",1500);
 
-    GMMNeglogLikelihoods_RGB(i) = -GMMs.bestLogLikelihood;
-    GMMLog_Likelihoods_RGB{i} = GMMs.bestLogLikelihood; 
+    GMMNeglogLikelihoods_RGB(i) = -GMMs.logLikelihood;
+    GMMLog_Likelihoods_RGB{i} = GMMs.logLikelihood; 
     
 end
 GMM_RGB_time = toc;
@@ -130,8 +130,8 @@ for i = 1 : numModels
 
     GMMs = GMM_NV(Training_SIFT_data,i,"NumReplicates",1,"MaxIterations",1500); 
 
-    GMMNeglogLikelihoods_SIFT(i) = -GMMs.bestLogLikelihood;
-    GMMLog_Likelihoods_SIFT{i} = GMMs.bestLogLikelihood;  
+    GMMNeglogLikelihoods_SIFT(i) = -GMMs.logLikelihood;
+    GMMLog_Likelihoods_SIFT{i} = GMMs.logLikelihood;  
     
 end
 GMM_SIFT_time = toc;
@@ -146,8 +146,8 @@ for i = 1 : numModels
 
     sEM_GMMs = sEM(Training_RGB_data, i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     
-    sEMNeglogLikelihoods_RGB(i) = sEM_GMMs.Log_Likelihood;
-    sEMLog_Likelihoods_RGB{i} = -sEM_GMMs.Log_Likelihood;
+    sEMNeglogLikelihoods_RGB(i) = sEM_GMMs.NegLogLikelihood;
+    sEMLog_Likelihoods_RGB{i} = -sEM_GMMs.NegLogLikelihood;
    
     
 end
@@ -162,8 +162,8 @@ for i = 1 : numModels
 
     GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     
-    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs.Log_Likelihood;
-    sEMLog_Likelihoods_SIFT{i} = -GMMs.Log_Likelihood;  
+    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs.NegLogLikelihood;
+    sEMLog_Likelihoods_SIFT{i} = -GMMs.NegLogLikelihood;  
     
 end
 sEM_SIFT_time = toc;
