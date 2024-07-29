@@ -68,7 +68,7 @@ clear Training_FeatureMatrix
 %% fitgmdist Gaussian Mixture Model
 
 % Για τα RGB δεδομένα
-opts = statset('Display','final','MaxIter',1500);
+opts = statset('Display','final','MaxIter',100);
 regularizationValue = 1e-5; % Insert a regularization value to avoid ill-conditioned covariance.
                             % This can happen when the covariance matrices during the fitting of a 
                             % Gaussian Mixture Model (GMM) become nearly singular or not positive 
@@ -107,64 +107,47 @@ fitGMM_SIFT_time = toc;
 %% Gaussian Mixture Model
 
 % Για τα RGB δεδομένα
-
 tic
 for i = 1 : numModels
-
-    fprintf("Number of cluster:%d \n",i)
-
-    GMMs = GMM_NV(Training_RGB_data,i,"NumReplicates",1,"MaxIterations",1500);
-
-    GMMNeglogLikelihoods_RGB(i) = -GMMs.logLikelihood;
-    GMMLog_Likelihoods_RGB{i} = GMMs.logLikelihood; 
-    
+    fprintf("Number of cluster:%d ",i)
+    GMMs{i} = GMM_NV(Training_RGB_data,i,"NumReplicates",1,"MaxIterations",100);
+    GMMNeglogLikelihoods_RGB(i) = -GMMs{i}.logLikelihood;
+    GMMLog_Likelihoods_RGB{i} = GMMs{i}.logLikelihood; 
+    fprintf(" >> Negative Log-Likelihood:%e\n", GMMNeglogLikelihoods_RGB(i))
 end
 GMM_RGB_time = toc;
 
 % Για τα SIFT δεδομένα
-
 tic
 for i = 1 : numModels
-
-    fprintf("Number of cluster:%d \n",i)
-
-    GMMs = GMM_NV(Training_SIFT_data,i,"NumReplicates",1,"MaxIterations",1500); 
-
-    GMMNeglogLikelihoods_SIFT(i) = -GMMs.logLikelihood;
-    GMMLog_Likelihoods_SIFT{i} = GMMs.logLikelihood;  
-    
+    fprintf("Number of cluster:%d ",i)
+    GMMs{i} = GMM_NV(Training_SIFT_data,i,"NumReplicates",1,"MaxIterations",100); 
+    GMMNeglogLikelihoods_SIFT(i) = -GMMs{i}.logLikelihood;
+    GMMLog_Likelihoods_SIFT{i} = GMMs{i}.logLikelihood;  
+    fprintf(" >> Negative Log-Likelihood:%e\n", GMMNeglogLikelihoods_SIFT(i))
 end
 GMM_SIFT_time = toc;
 
 %% sEM
 
 % Για τα RGB δεδομένα
-
 for i = 1 : numModels
-
-    fprintf("Number of cluster:%d \n",i)
-
-    sEM_GMMs = sEM(Training_RGB_data, i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
-    
-    sEMNeglogLikelihoods_RGB(i) = sEM_GMMs.NegLogLikelihood;
-    sEMLog_Likelihoods_RGB{i} = -sEM_GMMs.NegLogLikelihood;
-   
-    
+    fprintf("Number of cluster:%d ",i)
+    sEM_GMMs{i} = sEM(Training_RGB_data, i,"Alpha",0.5,"BatchSize",100,"MaxIterations",100); 
+    sEMNeglogLikelihoods_RGB(i) = sEM_GMMs{i}.NegLogLikelihood;
+    sEMLog_Likelihoods_RGB{i} = -sEM_GMMs{i}.NegLogLikelihood;
+    fprintf(" >> Negative Log-Likelihood:%e\n", sEMNeglogLikelihoods_RGB(i))
 end
 sEM_RGB_time = toc;
 
 % Για τα SIFT δεδομένα
-
 tic
 for i = 1 : numModels
-
-    fprintf("Number of cluster:%d \n",i)
-
-    sEM_GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
-    
-    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs.NegLogLikelihood;
-    sEMLog_Likelihoods_SIFT{i} = -sEM_GMMs.NegLogLikelihood;  
-    
+    fprintf("Number of cluster:%d ",i)
+    sEM_GMMs{i} = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",10000,"MaxIterations",100); 
+    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs{i}.NegLogLikelihood;
+    sEMLog_Likelihoods_SIFT{i} = -sEM_GMMs{i}.NegLogLikelihood;  
+    fprintf(" >> Negative Log-Likelihood:%e\n", sEMNeglogLikelihoods_SIFT(i))
 end
 sEM_SIFT_time = toc;
 

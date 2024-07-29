@@ -62,7 +62,7 @@ for i = 1 : numModels
     GMMs = sEM(Training_FeatureMatrix.Reduced_RGB_Features_Matrix, i,"Alpha",0.5,"BatchSize",100, ...
         "MaxIterations",1500); 
     logLikelihoods_RGB(i) = GMMs.NegLogLikelihood;
-    Log_Likelihoods_RGB{i} = GMMs.Log_Likelihood;
+    Log_Likelihoods_RGB{i} = -GMMs.NegLogLikelihood;
 
     fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods_RGB(i))   
     
@@ -92,7 +92,7 @@ for i = 1 : numModels
 
     GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",100,"MaxIterations",1500); 
     logLikelihoods_SIFT(i) = GMMs.NegLogLikelihood;
-    Log_Likelihoods_SIFT{i} = GMMs.Log_Likelihood;
+    Log_Likelihoods_SIFT{i} = -GMMs.NegLogLikelihood;
 
     fprintf(" >> Negative Log-Likelihood:%e\n ",logLikelihoods_SIFT(i))   
     
