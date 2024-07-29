@@ -145,9 +145,9 @@ function GMM = sEM(data,numClusters,Options)
         %
         % Calculate the new weights for each cluster
         % weights = sumResponsibilities / numPoints;
-         if abs(LogLikelihood - oldLogLikelihood) < convergenceThreshold || i == Options.MaxIterations
+        if abs(LogLikelihood - oldLogLikelihood) < convergenceThreshold || i == Options.MaxIterations
 
-                fprintf("Converged in iteration %d",i)
+                fprintf("Converged in iteration %d\n",i)
 
                 % Update best log likelihood
                 bestLogLikelihood = LogLikelihood;
@@ -165,7 +165,6 @@ function GMM = sEM(data,numClusters,Options)
         oldLogLikelihood = LogLikelihood;
 
     end
-
 
     function one_hot = one_hot_encoding(Responsibilities)
 
