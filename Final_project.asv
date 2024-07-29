@@ -156,7 +156,7 @@ sEM_SIFT_time = toc;
 % For the fitgmdist function
 
 % fitgmdist_Params = CalculateParamsNV(Training_SIFT_data,Training_RGB_data,fitGMMLog_Likelihoods_SIFT, ...
-                                                                        % fitGMMLog_Likelihoods_RGB);
+                                                                        fitGMMLog_Likelihoods_RGB);
 
 % From the GMM function
 

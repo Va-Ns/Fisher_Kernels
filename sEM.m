@@ -145,15 +145,19 @@ function GMM = sEM(data,numClusters,Options)
         %
         % Calculate the new weights for each cluster
         % weights = sumResponsibilities / numPoints;
-        if abs(LogLikelihood - oldLogLikelihood) < convergenceThreshold || i == Options.MaxIterations
+         if abs(LogLikelihood - oldLogLikelihood) < convergenceThreshold || i == Options.MaxIterations
 
-                fprintf("Converged in iteration %d\n",i)
+                fprintf("Converged in iteration %d",i)
 
                 % Update best log likelihood
                 bestLogLikelihood = LogLikelihood;
-            
+                
+                %% Place the best found statistics in the struct
+                NegLogLikelihood = -bestLogLikelihood;
+
                 % Update the struct with the new results
-                GMM.NegLogLikelihood = -bestLogLikelihood;
+                GMM.NegLogLikelihood = NegLogLikelihood;
+                GMM.Log_Likelihood = tall(gather(Log_Likelihood));
               
             break;
         end
@@ -161,6 +165,7 @@ function GMM = sEM(data,numClusters,Options)
         oldLogLikelihood = LogLikelihood;
 
     end
+
 
     function one_hot = one_hot_encoding(Responsibilities)
 
