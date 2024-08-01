@@ -144,9 +144,9 @@ sEM_RGB_time = toc;
 tic
 for i = 1 : numModels
     fprintf("Number of cluster:%d \n",i)
-    sEM_GMMs{i} = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",10000,"MaxIterations",100); 
-    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs{i}.NegLogLikelihood;
-    sEMLog_Likelihoods_SIFT{i} = -sEM_GMMs{i}.NegLogLikelihood;  
+    sEM_GMMs = sEM(Training_SIFT_data,i,"Alpha",0.5,"BatchSize",10000,"MaxIterations",100); 
+    sEMNeglogLikelihoods_SIFT(i) = sEM_GMMs.NegLogLikelihood;
+    sEMLog_Likelihoods_SIFT{i} = -sEM_GMMs.Log_Likelihood;  
     fprintf(" >> Negative Log-Likelihood:%e\n", sEMNeglogLikelihoods_SIFT(i))
 end
 sEM_SIFT_time = toc;
@@ -218,7 +218,7 @@ t = templateSVM('SaveSupportVectors',true,'Type','classification');
 [Model1,HyperparameterOptimizationResults1] = fitcecoc(fitgmdist_Total_Training_Fisher_Kernel, ...
     [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
     'OptimizeHyperparameters','all', 'HyperparameterOptimizationOptions', ...
-    struct('Holdout',0.1,"UseParallel",true));
+    struct('Holdout',0.1,"UseParallel",true,"ShowPlots",false));
 
 Mdl1 = Model1.Trained{1};
 [predictedLabels1, scores1]= predict(Model1,fitgmdist_Total_Testing_Fisher_Kernel);
@@ -228,7 +228,7 @@ Mdl1 = Model1.Trained{1};
 [Model2,HyperparameterOptimizationResults2] = fitcecoc(GMM_Total_Training_Fisher_Kernel, ...
     [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
     'OptimizeHyperparameters','all', 'HyperparameterOptimizationOptions', ...
-    struct('Holdout',0.1,"UseParallel",true));
+    struct('Holdout',0.1,"UseParallel",true,"ShowPlots",false));
 
 Mdl2 = Model2.Trained{1};
 [predictedLabels2, scores2]= predict(Model2,GMM_Total_Testing_Fisher_Kernel);
@@ -239,7 +239,7 @@ Mdl2 = Model2.Trained{1};
 [Model3,HyperparameterOptimizationResults3] = fitcecoc(sEM_Total_Training_Fisher_Kernel, ...
     [new_Trainds.Labels;new_Trainds.Labels],"Learners",t,"Coding", "onevsall", ...
     'OptimizeHyperparameters','all', 'HyperparameterOptimizationOptions', ...
-    struct('Holdout',0.1,"UseParallel",true));
+    struct('Holdout',0.1,"UseParallel",true,"ShowPlots",false));
 
 Mdl3 = Model3.Trained{1};
 [predictedLabels3, scores3]= predict(Model3,sEM_Total_Testing_Fisher_Kernel);
