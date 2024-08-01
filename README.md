@@ -16,7 +16,7 @@ This project is inspired by the code snippets available from Svetlana [Lazebnik 
 
 ![image](https://github.com/user-attachments/assets/5383ee13-96a4-42e1-be03-4132c5994e69)
 
-*2D Contour visualization of the assignment of points into four discrete clusters based on the results of the GMM. With red points are marked the centers of the clusters*
+*2D Contour visualization of the assignment of points into four discrete clusters based on the results of the GMM. With red circles are marked the centers of the clusters*
 
 ![image](https://github.com/user-attachments/assets/01552bbb-a7ef-469f-aad2-3dbd5aca4c08)
 
