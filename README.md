@@ -25,17 +25,13 @@ This project is inspired by the code snippets available from Svetlana [Lazebnik 
 
 ## Project Structure
 
-- **denseSIFTVN.m**: Extracts dense SIFT descriptors from the images.
-- **DictionaryFormationVN.m**: Forms a dictionary of visual words using k-means clustering.
-- **Final_Experiment.m**: Main script to run the experiment, including feature extraction, dictionary formation, spatial pyramid matching, and SVM classification.
-- **gaussVN.m**: Applies Gaussian filtering to the images.
-- **hist_intersection_VN.m**: Computes the histogram intersection kernel.
-- **miniBatchKMeansVN.m**: Performs mini-batch k-means clustering.
-- **resultsTable.mat**: Stores the results of the experiments.
+- **CalculateParamsNV.m**: Calculates the parameters for the Gaussian Mixture Model (GMM).
+- **extractImageFeatures.m**: Extracts image features from the dataset.
+- **FisherEncodingNV.m**: Encodes features using Fisher encoding.
+- **GMM_NV.m**: Implements the Gaussian Mixture Model (GMM) for the project.
+- **sEM.m**: Implements the stochastic Expectation-Maximization algorithm.
+- **Final_project.m**: Main script to run the project, including data loading, feature extraction, GMM parameter calculation, Fisher encoding, and classification.
 - **scene_categories/**: Directory containing the dataset of scene categories.
-- **SIFTnormalizationVN.m**: Normalizes SIFT descriptors.
-- **SpatialPyramidVN.m**: Constructs spatial pyramid representations of the images.
-- **splitTheDatastore2.m**: Splits the image datastore into training and testing sets.
 
 ## How to Run
 
@@ -44,10 +40,10 @@ To run this project:
 2. Clone this repository to your local machine.
 3. Place your dataset in the `scene_categories/`directory.
 4. Open MATLAB and navigate to the cloned project directory.
-5. Run the `Final_Experiment.m` script to start the image classification pipeline.
+5. Run the `Final_project.m` script to start the image classification pipeline.
 
 ```matlab
-run('Final_Experiment.m')
+run('Final_project.m')
 ```
 
 ## Disclaimer
