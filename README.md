@@ -46,10 +46,6 @@ To run this project:
 run('Final_project.m')
 ```
 
-## Disclaimer
-
-This repository is a simple form of reproduction with a few changes compared to the initial files that are provided. In keeping with that theme, one can identify the use of GPU accelaration and Parallel processing to minimize the experiment's time to completion. 
-
 ## License
 
 This code is for teaching/research purposes only.
