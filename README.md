@@ -1,4 +1,4 @@
-# Image Classification using the Spatial Pyramid Matching scheme in MATLAB
+# Image Classification using Fisher kernels in MATLAB
 
 This project is inspired by the code snippets available from Svetlana [Lazebnik et al.](https://slazebni.cs.illinois.edu/). It implement the Spatial Pyramid Matching scheme for classifying different scene categories, while yielding the GPU and Parallel Computing Toolboxes of MATLAB. 
 
