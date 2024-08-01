@@ -15,7 +15,7 @@ imds = imageDatastore(filelocation,"IncludeSubfolders",true,"LabelSource","folde
 
 %% Partition the data into training and testing sets
 
-Labels = countEachLabel(imds)
+Labels = countEachLabel(imds);
 
 [Trainds,Testds] = splitTheDatastore(imds,Labels);
 
@@ -189,11 +189,12 @@ fprintf("Encoding the Training Features\n")
 GMM_Total_Testing_Fisher_Kernel = FisherEncodingNV(GMM_Params,Testing_features);
 
 % For the sEM function
-
+tic
 fprintf("Encoding the Training Features\n")
 sEM_Total_Training_Fisher_Kernel = FisherEncodingNV(sEM_Params,Training_features);
 fprintf("Encoding the Training Features\n")
 sEM_Total_Testing_Fisher_Kernel = FisherEncodingNV(sEM_Params,Testing_features);
+ParallelFisherEncodingTime = toc;
 
 clear Training_features Testing_features 
 
