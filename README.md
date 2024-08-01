@@ -1,6 +1,6 @@
 # Image Classification using Fisher kernels in MATLAB
 
-This project is inspired by the code snippets available from Svetlana [Lazebnik et al.](https://slazebni.cs.illinois.edu/). It implement the Spatial Pyramid Matching scheme for classifying different scene categories, while yielding the GPU and Parallel Computing Toolboxes of MATLAB. 
+This project is an attempt to recreate the work done by Florent Perronnin: "_Fisher Kernels on Visual Vocabularies for Image Categorization_" by classifying a set of images with scenes. Using the dataset that is available from Svetlana [Lazebnik et al.](https://slazebni.cs.illinois.edu/) in the SPM experiment, the axis of this project is to use Gaussian Mixture Models, the sufficient statistics of which are used to form a Dictionary for the features extracted by SIFT and the RGB planes of the data. With the Fisher kernel consisting of computing the gradient of the sufficient statistics and concatenating them in the form of a vector, the latter encodes the data into a vector representation that is normalized using an approximation of the diagonal of the Fisher Information Matrix. Finally, the vectors are feeded in a SVM classifier. With the metric of the project being _Accuracy_, it can be seen that Fisher Kernels manage to increase the descriptiveness induced by the SPM schematic.
 
 
 ![image](https://github.com/user-attachments/assets/5ce330c4-4a0d-4c9f-8a33-2f6086c43d05)
@@ -48,7 +48,7 @@ run('Final_project.m')
 
 ## Disclaimer
 
-This repository is a simple form of reproduction with a few changes compared to the initial files that are provided.  In keeping with that theme, one can identify the use of GPU accelaration and Parallel processing to minimize the experiment's time to completion. Yet, there exist comments and parts inside some code snippets (even cases where the only changes made in the code snippets are just more explanatory comments) that belong in the initial draft of the contributors as the latter are provided in the [link](https://slazebni.cs.illinois.edu/). All acknowledgements for those parts go to the authors!
+This repository is a simple form of reproduction with a few changes compared to the initial files that are provided. In keeping with that theme, one can identify the use of GPU accelaration and Parallel processing to minimize the experiment's time to completion. 
 
 ## License
 
