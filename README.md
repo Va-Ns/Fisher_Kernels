@@ -6,7 +6,7 @@ This project is inspired by the code snippets available from Svetlana [Lazebnik 
 ![image](https://github.com/user-attachments/assets/5ce330c4-4a0d-4c9f-8a33-2f6086c43d05)
 
 
-*Visualization of the density of four individual populations, as an example*
+*Visualization of the density of four individual populations, as a part of an example*
 
 ![image](https://github.com/user-attachments/assets/34a3b450-2d78-4665-86f6-7a1d39a606e4)
 
